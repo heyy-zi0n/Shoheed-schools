@@ -1,0 +1,340 @@
+CREATE DATABASE IF NOT EXISTS shoheed_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE shoheed_db;
+
+-- 1. Roles
+CREATE TABLE roles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE
+) ENGINE=InnoDB;
+
+-- 2. Users
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    role_id INT NOT NULL,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    email VARCHAR(150) NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    status ENUM('ACTIVE', 'INACTIVE') DEFAULT 'ACTIVE',
+    last_login_at DATETIME NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (role_id) REFERENCES roles(id)
+) ENGINE=InnoDB;
+
+-- 3. Staff
+CREATE TABLE staff (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL UNIQUE,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    phone VARCHAR(20) NULL,
+    address TEXT NULL,
+    profile_image VARCHAR(255) NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- 4. Students
+CREATE TABLE students (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NULL UNIQUE,
+    admission_number VARCHAR(50) NOT NULL UNIQUE,
+    first_name VARCHAR(100) NOT NULL,
+    middle_name VARCHAR(100) NULL,
+    last_name VARCHAR(100) NOT NULL,
+    gender ENUM('Male', 'Female') NOT NULL,
+    date_of_birth DATE NULL,
+    admission_date DATE NULL,
+    profile_image VARCHAR(255) NULL,
+    status ENUM('ACTIVE', 'INACTIVE', 'GRADUATED', 'WITHDRAWN') DEFAULT 'ACTIVE',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+-- 5. Guardians
+CREATE TABLE guardians (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL UNIQUE,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    address TEXT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- 6. Student Guardians Link
+CREATE TABLE student_guardians (
+    student_id INT NOT NULL,
+    guardian_id INT NOT NULL,
+    relationship VARCHAR(50) NULL,
+    PRIMARY KEY (student_id, guardian_id),
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    FOREIGN KEY (guardian_id) REFERENCES guardians(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- 7. Academic Sessions & Terms
+CREATE TABLE academic_sessions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    is_active BOOLEAN DEFAULT FALSE,
+    start_date DATE NULL,
+    end_date DATE NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE terms (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    academic_session_id INT NOT NULL,
+    is_active BOOLEAN DEFAULT FALSE,
+    start_date DATE NULL,
+    end_date DATE NULL,
+    FOREIGN KEY (academic_session_id) REFERENCES academic_sessions(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- 8. Classes
+CREATE TABLE classes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(20) NOT NULL UNIQUE,
+    level INT NOT NULL
+) ENGINE=InnoDB;
+
+-- 9. Subjects
+CREATE TABLE subjects (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    code VARCHAR(20) NULL UNIQUE,
+    is_active BOOLEAN DEFAULT TRUE
+) ENGINE=InnoDB;
+
+-- 10. Enrollments
+CREATE TABLE student_enrollments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT NOT NULL,
+    academic_session_id INT NOT NULL,
+    class_id INT NOT NULL,
+    status ENUM('ACTIVE', 'PROMOTED', 'REPEATED', 'WITHDRAWN') DEFAULT 'ACTIVE',
+    UNIQUE (student_id, academic_session_id),
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    FOREIGN KEY (academic_session_id) REFERENCES academic_sessions(id),
+    FOREIGN KEY (class_id) REFERENCES classes(id)
+) ENGINE=InnoDB;
+
+-- 11. Teacher Assignments
+CREATE TABLE class_teacher_assignments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    staff_id INT NOT NULL,
+    class_id INT NOT NULL,
+    academic_session_id INT NOT NULL,
+    UNIQUE (class_id, academic_session_id),
+    FOREIGN KEY (staff_id) REFERENCES staff(id),
+    FOREIGN KEY (class_id) REFERENCES classes(id),
+    FOREIGN KEY (academic_session_id) REFERENCES academic_sessions(id)
+) ENGINE=InnoDB;
+
+CREATE TABLE subject_teacher_assignments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    staff_id INT NOT NULL,
+    subject_id INT NOT NULL,
+    class_id INT NOT NULL,
+    academic_session_id INT NOT NULL,
+    UNIQUE (subject_id, class_id, academic_session_id),
+    FOREIGN KEY (staff_id) REFERENCES staff(id),
+    FOREIGN KEY (subject_id) REFERENCES subjects(id),
+    FOREIGN KEY (class_id) REFERENCES classes(id),
+    FOREIGN KEY (academic_session_id) REFERENCES academic_sessions(id)
+) ENGINE=InnoDB;
+
+CREATE TABLE class_subjects (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    class_id INT NOT NULL,
+    subject_id INT NOT NULL,
+    UNIQUE (class_id, subject_id),
+    FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
+    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- 12. Results
+CREATE TABLE result_batches (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    class_id INT NOT NULL,
+    academic_session_id INT NOT NULL,
+    term_id INT NOT NULL,
+    status ENUM('DRAFT', 'SUBMITTED', 'REVISION_REQUIRED', 'CLASS_TEACHER_VERIFIED', 'PRINCIPAL_APPROVED', 'PUBLISHED') DEFAULT 'DRAFT',
+    verified_by INT NULL,
+    verified_at DATETIME NULL,
+    approved_by INT NULL,
+    approved_at DATETIME NULL,
+    published_at DATETIME NULL,
+    UNIQUE (class_id, academic_session_id, term_id),
+    FOREIGN KEY (class_id) REFERENCES classes(id),
+    FOREIGN KEY (academic_session_id) REFERENCES academic_sessions(id),
+    FOREIGN KEY (term_id) REFERENCES terms(id),
+    FOREIGN KEY (verified_by) REFERENCES staff(id) ON DELETE SET NULL,
+    FOREIGN KEY (approved_by) REFERENCES staff(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE scores (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    result_batch_id INT NOT NULL,
+    student_id INT NOT NULL,
+    subject_id INT NOT NULL,
+    ca_score DECIMAL(5,2) NULL,
+    exam_score DECIMAL(5,2) NULL,
+    total_score DECIMAL(5,2) NULL,
+    grade VARCHAR(5) NULL,
+    remark VARCHAR(50) NULL,
+    entered_by INT NULL,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE (result_batch_id, student_id, subject_id),
+    FOREIGN KEY (result_batch_id) REFERENCES result_batches(id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
+    FOREIGN KEY (entered_by) REFERENCES staff(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE result_workflow_history (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    result_batch_id INT NOT NULL,
+    user_id INT NULL,
+    previous_status VARCHAR(50) NULL,
+    new_status VARCHAR(50) NOT NULL,
+    comments TEXT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (result_batch_id) REFERENCES result_batches(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+-- 13. Attendance
+CREATE TABLE attendance (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT NOT NULL,
+    class_id INT NOT NULL,
+    academic_session_id INT NOT NULL,
+    term_id INT NOT NULL,
+    attendance_date DATE NOT NULL,
+    status ENUM('Present', 'Absent', 'Late', 'Excused') NOT NULL,
+    recorded_by INT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE (student_id, attendance_date, academic_session_id),
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    FOREIGN KEY (class_id) REFERENCES classes(id),
+    FOREIGN KEY (academic_session_id) REFERENCES academic_sessions(id),
+    FOREIGN KEY (term_id) REFERENCES terms(id),
+    FOREIGN KEY (recorded_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+-- 14. Fees and Finance
+CREATE TABLE fee_structures (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    academic_session_id INT NOT NULL,
+    term_id INT NOT NULL,
+    class_id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    total_amount DECIMAL(10,2) NOT NULL,
+    UNIQUE (academic_session_id, term_id, class_id),
+    FOREIGN KEY (academic_session_id) REFERENCES academic_sessions(id),
+    FOREIGN KEY (term_id) REFERENCES terms(id),
+    FOREIGN KEY (class_id) REFERENCES classes(id)
+) ENGINE=InnoDB;
+
+CREATE TABLE fee_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    fee_structure_id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (fee_structure_id) REFERENCES fee_structures(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE student_invoices (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT NOT NULL,
+    academic_session_id INT NOT NULL,
+    term_id INT NOT NULL,
+    total_amount DECIMAL(10,2) NOT NULL,
+    status ENUM('PENDING', 'PARTIAL', 'PAID') DEFAULT 'PENDING',
+    due_date DATE NULL,
+    UNIQUE (student_id, academic_session_id, term_id),
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    FOREIGN KEY (academic_session_id) REFERENCES academic_sessions(id),
+    FOREIGN KEY (term_id) REFERENCES terms(id)
+) ENGINE=InnoDB;
+
+CREATE TABLE invoice_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_invoice_id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (student_invoice_id) REFERENCES student_invoices(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE payments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_invoice_id INT NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    payment_method VARCHAR(50) NOT NULL,
+    payment_reference VARCHAR(100) NULL,
+    payment_date DATE NOT NULL,
+    recorded_by INT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (student_invoice_id) REFERENCES student_invoices(id) ON DELETE CASCADE,
+    FOREIGN KEY (recorded_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE receipts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    payment_id INT NOT NULL UNIQUE,
+    receipt_number VARCHAR(50) NOT NULL UNIQUE,
+    generated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (payment_id) REFERENCES payments(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- 15. Announcements & Notifications
+CREATE TABLE announcements (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    body TEXT NOT NULL,
+    author_id INT NULL,
+    audience ENUM('ALL', 'STAFF', 'STUDENTS', 'PARENTS') DEFAULT 'ALL',
+    is_public BOOLEAN DEFAULT FALSE,
+    status ENUM('DRAFT', 'PUBLISHED') DEFAULT 'DRAFT',
+    publish_date DATE NULL,
+    expiry_date DATE NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    title VARCHAR(150) NOT NULL,
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- 16. Audit Logs & Settings
+CREATE TABLE audit_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NULL,
+    action VARCHAR(100) NOT NULL,
+    entity_type VARCHAR(50) NULL,
+    entity_id INT NULL,
+    description TEXT NULL,
+    ip_address VARCHAR(45) NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE system_settings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    setting_key VARCHAR(100) NOT NULL UNIQUE,
+    setting_value TEXT NULL,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;

@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply antialiased text-charcoal bg-ivory;
+  }
+}
+
+@layer components {
+  /* Add portal specific components here if needed */
+  .btn-primary {
+    @apply px-4 py-2 bg-school-blue text-white rounded hover:bg-school-navy transition-colors font-medium;
+  }
+}

@@ -1,0 +1,118 @@
+# =========================================================
+# ENVIRONMENT / SECRETS
+# =========================================================
+
+.env
+.env.*
+!.env.example
+
+# =========================================================
+# LOCAL / SECRET CONFIG
+# =========================================================
+
+config/local.php
+config/database.local.php
+config/secrets.php
+config/credentials.php
+
+# =========================================================
+# PASSWORD / CREDENTIAL / SECRET FILES
+# =========================================================
+
+*password*
+*passwords*
+*passwd*
+*credentials*
+*credential*
+*secret*
+*secrets*
+*.key
+*.pem
+*.p12
+*.pfx
+
+# =========================================================
+# DATABASE EXPORTS / BACKUPS
+# =========================================================
+
+*.sql.bak
+*.sql.gz
+*.dump
+*.backup
+database/backups/
+backups/
+
+# IMPORTANT:
+# Do NOT ignore the canonical schema/migration files required
+# to recreate the application database.
+#
+# Keep files such as:
+# database/schema.sql
+# database/migrations/
+# database/seed.php
+
+# =========================================================
+# USER UPLOADS / GENERATED PRIVATE DATA
+# =========================================================
+
+storage/profiles/*
+storage/documents/*
+storage/receipts/*
+
+!storage/profiles/.gitkeep
+!storage/documents/.gitkeep
+!storage/receipts/.gitkeep
+
+# =========================================================
+# LOGS
+# =========================================================
+
+logs/
+*.log
+error_log
+
+# =========================================================
+# TEMP / CACHE
+# =========================================================
+
+tmp/
+temp/
+cache/
+*.tmp
+*.cache
+
+# =========================================================
+# IDE / EDITOR
+# =========================================================
+
+.vscode/
+.idea/
+
+# =========================================================
+# OS FILES
+# =========================================================
+
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================================================
+# AI / PROJECT INSTRUCTION FILES
+# =========================================================
+
+PRD.md
+Architecture.md
+Architecture-essential.md
+Agents.md
+Gemini.md
+UI.md
+Master-Prompt.md
+
+# =========================================================
+# LOCAL NOTES / BACKUPS
+# =========================================================
+
+*.bak
+*.swp
+*.swo
+*~

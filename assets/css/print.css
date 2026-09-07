@@ -1,0 +1,24 @@
+@media print {
+  body {
+    background-color: white !important;
+    color: black !important;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-only {
+    display: block !important;
+  }
+  
+  /* Prevent page breaks inside rows */
+  tr, td, th {
+    page-break-inside: avoid;
+  }
+  
+  /* Reset margins for printing */
+  @page {
+    margin: 1cm;
+  }
+}
