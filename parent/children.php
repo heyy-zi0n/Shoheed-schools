@@ -73,10 +73,10 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                             </div>
                             
                             <div class="mt-auto grid grid-cols-2 gap-3">
-                                <a href="#" class="text-center bg-gray-100 hover:bg-gray-200 text-charcoal px-3 py-2 rounded text-sm font-medium transition-colors">
+                                <a href="<?= url('parent/results.php?student_id=' . $child['id']) ?>" class="text-center bg-gray-100 hover:bg-gray-200 text-charcoal px-3 py-2 rounded text-sm font-medium transition-colors">
                                     Results
                                 </a>
-                                <a href="#" class="text-center bg-gray-100 hover:bg-gray-200 text-charcoal px-3 py-2 rounded text-sm font-medium transition-colors">
+                                <a href="<?= url('parent/fees.php?student_id=' . $child['id']) ?>" class="text-center bg-gray-100 hover:bg-gray-200 text-charcoal px-3 py-2 rounded text-sm font-medium transition-colors">
                                     Finance
                                 </a>
                             </div>

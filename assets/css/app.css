@@ -13,4 +13,13 @@
   .btn-primary {
     @apply px-4 py-2 bg-school-blue text-white rounded hover:bg-school-navy transition-colors font-medium;
   }
+
+  .flash-message {
+      transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+
+  .flash-message.flash-hide {
+      opacity: 0;
+      transform: translateY(-4px);
+  }
 }

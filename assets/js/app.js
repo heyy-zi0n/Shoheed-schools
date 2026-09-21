@@ -20,3 +20,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+
+function initFlashMessages() {
+    const flashes = document.querySelectorAll('.flash-message[data-auto-dismiss="true"]');
+    
+    flashes.forEach((flash) => {
+        if (flash.dataset.dismissBound === 'true') {
+            return;
+        }
+        
+        flash.dataset.dismissBound = 'true';
+        
+        setTimeout(() => {
+            flash.classList.add('flash-hide');
+            
+            setTimeout(() => {
+                flash.remove();
+            }, 300);
+        }, 4000);
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initFlashMessages);
+} else {
+    initFlashMessages();
+}

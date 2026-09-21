@@ -6,10 +6,10 @@ require_role([ROLE_PRINCIPAL]);
 $pageTitle = 'Result Approvals';
 $pdo = get_db_connection();
 
-$activeSession = $pdo->query("SELECT * FROM academic_sessions WHERE is_active = 1")->fetch();
+$activeSession = get_active_academic_session();
 $activeTerm = $pdo->query("SELECT * FROM terms WHERE is_active = 1")->fetch();
 
-$sessions = $pdo->query("SELECT * FROM academic_sessions ORDER BY name DESC")->fetchAll();
+$sessions = get_all_academic_sessions();
 $terms = $pdo->query("SELECT * FROM terms ORDER BY name ASC")->fetchAll();
 
 $sessionId = filter_var($_GET['academic_session_id'] ?? ($activeSession['id'] ?? null), FILTER_VALIDATE_INT);

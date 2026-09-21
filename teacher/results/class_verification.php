@@ -1,14 +1,19 @@
 <?php
 require_once __DIR__ . '/../../config/bootstrap.php';
 
-require_role([ROLE_CLASS_TEACHER]);
+require_auth();
+
+$staffId = current_staff_id();
+if (!$staffId) {
+    set_flash('error', 'Access denied. You do not have a staff profile.');
+    redirect('');
+}
 
 $pageTitle = 'Class Verification';
 $pdo = get_db_connection();
-$userId = current_user_id();
 
 // Get active session and term
-$activeSession = $pdo->query("SELECT * FROM academic_sessions WHERE is_active = 1")->fetch();
+$activeSession = get_active_academic_session();
 $activeTerm = $pdo->query("SELECT * FROM terms WHERE is_active = 1")->fetch();
 
 if (!$activeSession || !$activeTerm) {
@@ -17,10 +22,7 @@ if (!$activeSession || !$activeTerm) {
 
 $classId = filter_input(INPUT_GET, 'class', FILTER_VALIDATE_INT);
 
-// Get staff id
-$stmt = $pdo->prepare("SELECT id FROM staff WHERE user_id = :uid");
-$stmt->execute(['uid' => $userId]);
-$staffId = $stmt->fetchColumn();
+
 
 // Get assigned classes
 $stmt = $pdo->prepare("
@@ -66,19 +68,20 @@ $batchId = $batch ? $batch['id'] : null;
 
 // Get expected subjects (based on class_subjects)
 $stmt = $pdo->prepare("
-    SELECT s.id, s.name, ss.status, ss.comments, u.first_name, u.last_name
+    SELECT s.id, s.name, ss.status, ss.comments, st.first_name, st.last_name
     FROM class_subjects cs
     JOIN subjects s ON cs.subject_id = s.id
     LEFT JOIN subject_submissions ss ON ss.subject_id = s.id AND ss.result_batch_id = :batch_id
-    LEFT JOIN subject_teacher_assignments sta ON sta.subject_id = s.id AND sta.class_id = :class_id AND sta.academic_session_id = :sess_id
+    LEFT JOIN subject_teacher_assignments sta ON sta.subject_id = s.id AND sta.class_id = :class_id_1 AND sta.academic_session_id = :sess_id
     LEFT JOIN staff st ON sta.staff_id = st.id
     LEFT JOIN users u ON st.user_id = u.id
-    WHERE cs.class_id = :class_id
+    WHERE cs.class_id = :class_id_2
     ORDER BY s.name ASC
 ");
 $stmt->execute([
     'batch_id' => $batchId ?? 0,
-    'class_id' => $classId,
+    'class_id_1' => $classId,
+    'class_id_2' => $classId,
     'sess_id' => $activeSession['id']
 ]);
 $subjects = $stmt->fetchAll();

@@ -5,7 +5,7 @@ require_role([ROLE_ADMIN]);
 
 $pdo = get_db_connection();
 
-$sessions = $pdo->query("SELECT * FROM academic_sessions ORDER BY name DESC")->fetchAll();
+$sessions = get_all_academic_sessions();
 $classes = $pdo->query("SELECT * FROM classes ORDER BY level ASC")->fetchAll();
 
 $sourceSessionId = filter_var($_GET['source_session_id'] ?? null, FILTER_VALIDATE_INT);

@@ -7,7 +7,7 @@ $pageTitle = 'Academic Setup';
 $pdo = get_db_connection();
 
 // Fetch all sessions
-$sessions = $pdo->query("SELECT * FROM academic_sessions ORDER BY start_date DESC")->fetchAll();
+$sessions = get_all_academic_sessions();
 
 // Fetch terms for active session
 $activeSessionId = null;
@@ -38,6 +38,9 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                 <div>
                     <h1 class="text-2xl font-serif font-bold text-school-navy">Academic Setup</h1>
                     <p class="text-sm text-slate-gray">Manage sessions and terms.</p>
+                </div>
+                <div>
+                    <a href="<?= url('admin/academics/session_create.php') ?>" class="bg-school-blue text-white px-4 py-2 rounded font-medium text-sm hover:bg-school-navy transition-colors shadow-sm">+ Add Session</a>
                 </div>
             </div>
             

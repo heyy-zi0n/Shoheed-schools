@@ -30,11 +30,12 @@
             <a href="<?= url('principal/results/index.php') ?>" class="block px-6 py-2 text-sm text-gray-300 hover:text-white hover:bg-school-blue transition-colors">Result Approvals</a>
             <a href="<?= url('principal/students/index.php') ?>" class="block px-6 py-2 text-sm text-gray-300 hover:text-white hover:bg-school-blue transition-colors">Students</a>
             <a href="<?= url('admin/reports/broadsheet.php') ?>" class="block px-6 py-2 text-sm text-gray-300 hover:text-white hover:bg-school-blue transition-colors">Broadsheet</a>
+            <div class="px-6 py-2 mt-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Assignments</div>
+            <a href="<?= url('principal/assignments/classes.php') ?>" class="block px-6 py-2 text-sm text-gray-300 hover:text-white hover:bg-school-blue transition-colors">Class Teachers</a>
+            <a href="<?= url('principal/assignments/subjects.php') ?>" class="block px-6 py-2 text-sm text-gray-300 hover:text-white hover:bg-school-blue transition-colors">Subject Teachers</a>
         <?php elseif ($role === ROLE_CLASS_TEACHER || $role === ROLE_SUBJECT_TEACHER): ?>
             <div class="px-6 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Teacher</div>
             <a href="<?= url('teacher/dashboard.php') ?>" class="block px-6 py-2 text-sm text-gray-300 hover:text-white hover:bg-school-blue transition-colors">Dashboard</a>
-            <a href="<?= url('teacher/results/index.php') ?>" class="block px-6 py-2 text-sm text-gray-300 hover:text-white hover:bg-school-blue transition-colors">Score Entry</a>
-            <a href="<?= url('teacher/attendance/index.php') ?>" class="block px-6 py-2 text-sm text-gray-300 hover:text-white hover:bg-school-blue transition-colors">Attendance</a>
         <?php elseif ($role === ROLE_BURSAR): ?>
             <div class="px-6 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Finance</div>
             <a href="<?= url('bursar/dashboard.php') ?>" class="block px-6 py-2 text-sm text-gray-300 hover:text-white hover:bg-school-blue transition-colors">Dashboard</a>
@@ -51,5 +52,26 @@
             <a href="<?= url('parent/dashboard.php') ?>" class="block px-6 py-2 text-sm text-gray-300 hover:text-white hover:bg-school-blue transition-colors">Dashboard</a>
             <a href="<?= url('parent/children.php') ?>" class="block px-6 py-2 text-sm text-gray-300 hover:text-white hover:bg-school-blue transition-colors">My Children</a>
         <?php endif; ?>
+
+        <?php 
+        $staffId = current_staff_id();
+        $activeSession = get_active_academic_session();
+        if ($staffId && $activeSession):
+            $isClassTeacher = staff_has_class_teacher_assignment($staffId, $activeSession['id']);
+            $isSubjectTeacher = staff_has_subject_assignments($staffId, $activeSession['id']);
+            if ($isClassTeacher || $isSubjectTeacher):
+        ?>
+            <div class="px-6 py-2 mt-4 border-t border-school-navy/80 pt-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">My Teaching</div>
+            <?php if ($isSubjectTeacher): ?>
+                <a href="<?= url('teacher/results/index.php') ?>" class="block px-6 py-2 text-sm text-gray-300 hover:text-white hover:bg-school-blue transition-colors">Score Entry</a>
+            <?php endif; ?>
+            <?php if ($isClassTeacher): ?>
+                <a href="<?= url('teacher/attendance/index.php') ?>" class="block px-6 py-2 text-sm text-gray-300 hover:text-white hover:bg-school-blue transition-colors">Attendance</a>
+                <a href="<?= url('teacher/results/class_verification.php') ?>" class="block px-6 py-2 text-sm text-gray-300 hover:text-white hover:bg-school-blue transition-colors">Class Verification</a>
+            <?php endif; ?>
+        <?php 
+            endif;
+        endif; 
+        ?>
     </nav>
 </aside>

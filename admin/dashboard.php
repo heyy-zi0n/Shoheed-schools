@@ -24,7 +24,7 @@ require __DIR__ . '/../templates/layouts/app-header.php';
             $studentsCount = $pdo->query("SELECT COUNT(*) FROM students")->fetchColumn();
             $staffCount = $pdo->query("SELECT COUNT(*) FROM staff")->fetchColumn();
             
-            $activeSession = $pdo->query("SELECT name FROM academic_sessions WHERE is_active = 1 LIMIT 1")->fetchColumn() ?: 'None';
+            $activeSession = (get_active_academic_session()['name'] ?? null) ?: 'None';
             $activeTerm = $pdo->query("SELECT name FROM terms WHERE is_active = 1 LIMIT 1")->fetchColumn() ?: 'None';
             ?>
 

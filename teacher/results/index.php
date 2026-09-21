@@ -1,23 +1,23 @@
 <?php
 require_once __DIR__ . '/../../config/bootstrap.php';
 
-require_role([ROLE_CLASS_TEACHER, ROLE_SUBJECT_TEACHER]);
+require_auth();
+
+$staffId = current_staff_id();
+if (!$staffId) {
+    set_flash('error', 'Access denied. You do not have a staff profile.');
+    redirect('');
+}
 
 $pageTitle = 'Score Entry';
 $pdo = get_db_connection();
-$userId = current_user_id();
 
 // Get active session and term
-$activeSession = $pdo->query("SELECT * FROM academic_sessions WHERE is_active = 1")->fetch();
+$activeSession = get_active_academic_session();
 $activeTerm = $pdo->query("SELECT * FROM terms WHERE is_active = 1")->fetch();
 
 $assignments = [];
 if ($activeSession && $activeTerm) {
-    // Get staff ID for this user
-    $stmt = $pdo->prepare("SELECT id FROM staff WHERE user_id = :uid");
-    $stmt->execute(['uid' => $userId]);
-    $staffId = $stmt->fetchColumn();
-
     if ($staffId) {
         $stmt = $pdo->prepare("
             SELECT sta.id, c.name as class_name, c.id as class_id, s.name as subject_name, s.id as subject_id,

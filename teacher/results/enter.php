@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../../config/bootstrap.php';
 
-require_role([ROLE_CLASS_TEACHER, ROLE_SUBJECT_TEACHER]);
+require_auth();
 
 $classId = filter_input(INPUT_GET, 'class', FILTER_VALIDATE_INT);
 $subjectId = filter_input(INPUT_GET, 'subject', FILTER_VALIDATE_INT);
@@ -10,25 +10,25 @@ if (!$classId || !$subjectId) {
     redirect('teacher/results/index.php');
 }
 
-$pageTitle = 'Enter Scores';
-$pdo = get_db_connection();
-$userId = current_user_id();
-
-// Verify assignment
-$stmt = $pdo->prepare("SELECT s.id FROM staff s JOIN subject_teacher_assignments sta ON sta.staff_id = s.id WHERE s.user_id = :uid AND sta.class_id = :cid AND sta.subject_id = :sid");
-$stmt->execute(['uid' => $userId, 'cid' => $classId, 'sid' => $subjectId]);
-$staffId = $stmt->fetchColumn();
-
+$staffId = current_staff_id();
 if (!$staffId) {
-    // Only blocking if unauthorized, but in dev/seeding we might allow admins. Better to be strict.
-    die('Unauthorized access to this subject.');
+    set_flash('error', 'Access denied. You do not have a staff profile.');
+    redirect('');
 }
 
-$activeSession = $pdo->query("SELECT * FROM academic_sessions WHERE is_active = 1")->fetch();
+$pageTitle = 'Enter Scores';
+$pdo = get_db_connection();
+
+$activeSession = get_active_academic_session();
 $activeTerm = $pdo->query("SELECT * FROM terms WHERE is_active = 1")->fetch();
 
 if (!$activeSession || !$activeTerm) {
     redirect('teacher/results/index.php');
+}
+
+// Verify assignment
+if (!staff_can_access_subject_assignment($staffId, $classId, $subjectId, $activeSession['id'])) {
+    die('Unauthorized access to this subject.');
 }
 
 $className = $pdo->query("SELECT name FROM classes WHERE id = " . (int)$classId)->fetchColumn();

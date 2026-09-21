@@ -11,7 +11,7 @@ if (has_role([ROLE_ADMIN, ROLE_PRINCIPAL, ROLE_CLASS_TEACHER, ROLE_SUBJECT_TEACH
 $pdo = get_db_connection();
 $stmt = $pdo->prepare("
     SELECT * FROM announcements 
-    WHERE is_published = 1 AND target_audience IN ('ALL', :role_group)
+    WHERE status = 'PUBLISHED' AND audience IN ('ALL', :role_group)
     ORDER BY created_at DESC 
     LIMIT 5
 ");
@@ -31,7 +31,7 @@ $announcements = $stmt->fetchAll();
                         <h4 class="font-bold text-charcoal"><?= e($ann['title']) ?></h4>
                         <span class="text-xs text-slate-gray bg-gray-100 px-2 py-1 rounded-full"><?= e(date('M j', strtotime($ann['created_at']))) ?></span>
                     </div>
-                    <p class="text-sm text-slate-gray mt-2"><?= nl2br(e($ann['content'])) ?></p>
+                    <p class="text-sm text-slate-gray mt-2"><?= nl2br(e($ann['body'])) ?></p>
                 </li>
             <?php endforeach; ?>
         </ul>

@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../../config/bootstrap.php';
 
-require_role([ROLE_CLASS_TEACHER]);
+require_auth();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -26,19 +26,19 @@ try {
     $pdo = get_db_connection();
     
     // Verify assignment (security check)
-    $userId = current_user_id();
-    $activeSession = $pdo->query("SELECT * FROM academic_sessions WHERE is_active = 1")->fetch();
+    $staffId = current_staff_id();
+    if (!$staffId) {
+        throw new Exception("Access denied. You do not have a staff profile.");
+    }
+    
+    $activeSession = get_active_academic_session();
     $activeTerm = $pdo->query("SELECT * FROM terms WHERE is_active = 1")->fetch();
     
     if (!$activeSession || !$activeTerm) {
         throw new Exception("No active academic session or term found.");
     }
     
-    $stmt = $pdo->prepare("SELECT s.id FROM staff s JOIN class_teacher_assignments cta ON cta.staff_id = s.id WHERE s.user_id = :uid AND cta.class_id = :cid AND cta.academic_session_id = :sess");
-    $stmt->execute(['uid' => $userId, 'cid' => $classId, 'sess' => $activeSession['id']]);
-    $staffId = $stmt->fetchColumn();
-    
-    if (!$staffId) {
+    if (!staff_can_access_class_teacher_function($staffId, $classId, $activeSession['id'])) {
         throw new Exception("You are not authorized to record attendance for this class.");
     }
     

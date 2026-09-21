@@ -30,6 +30,8 @@ CREATE TABLE staff (
     phone VARCHAR(20) NULL,
     address TEXT NULL,
     profile_image VARCHAR(255) NULL,
+    can_teach_subjects TINYINT(1) NOT NULL DEFAULT 0,
+    can_be_class_teacher TINYINT(1) NOT NULL DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -129,7 +131,8 @@ CREATE TABLE class_teacher_assignments (
     staff_id INT NOT NULL,
     class_id INT NOT NULL,
     academic_session_id INT NOT NULL,
-    UNIQUE (class_id, academic_session_id),
+    UNIQUE KEY uq_class_teacher_class_session (class_id, academic_session_id),
+    UNIQUE KEY uq_class_teacher_staff_session (staff_id, academic_session_id),
     FOREIGN KEY (staff_id) REFERENCES staff(id),
     FOREIGN KEY (class_id) REFERENCES classes(id),
     FOREIGN KEY (academic_session_id) REFERENCES academic_sessions(id)
@@ -141,7 +144,8 @@ CREATE TABLE subject_teacher_assignments (
     subject_id INT NOT NULL,
     class_id INT NOT NULL,
     academic_session_id INT NOT NULL,
-    UNIQUE (subject_id, class_id, academic_session_id),
+    KEY (staff_id),
+    UNIQUE KEY uq_subject_class_session (class_id, subject_id, academic_session_id),
     FOREIGN KEY (staff_id) REFERENCES staff(id),
     FOREIGN KEY (subject_id) REFERENCES subjects(id),
     FOREIGN KEY (class_id) REFERENCES classes(id),

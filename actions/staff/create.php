@@ -21,6 +21,8 @@ $roleId = filter_var($_POST['role_id'] ?? null, FILTER_VALIDATE_INT);
 $email = trim($_POST['email'] ?? '');
 $username = trim($_POST['username'] ?? '');
 $password = $_POST['password'] ?? '';
+$canTeachSubjects = isset($_POST['can_teach_subjects']) ? 1 : 0;
+$canBeClassTeacher = isset($_POST['can_be_class_teacher']) ? 1 : 0;
 
 $errors = validate_required([
     'first_name' => $firstName,
@@ -66,13 +68,15 @@ try {
     $userId = $pdo->lastInsertId();
     
     // 2. Create Staff Profile
-    $stmt = $pdo->prepare("INSERT INTO staff (user_id, first_name, last_name, phone, address) VALUES (:user_id, :first, :last, :phone, :address)");
+    $stmt = $pdo->prepare("INSERT INTO staff (user_id, first_name, last_name, phone, address, can_teach_subjects, can_be_class_teacher) VALUES (:user_id, :first, :last, :phone, :address, :teach, :class_t)");
     $stmt->execute([
         'user_id' => $userId,
         'first' => $firstName,
         'last' => $lastName,
         'phone' => $phone !== '' ? $phone : null,
-        'address' => $address !== '' ? $address : null
+        'address' => $address !== '' ? $address : null,
+        'teach' => $canTeachSubjects,
+        'class_t' => $canBeClassTeacher
     ]);
     $staffId = $pdo->lastInsertId();
     

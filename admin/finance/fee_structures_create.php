@@ -5,7 +5,7 @@ require_role([ROLE_ADMIN, ROLE_BURSAR]);
 
 $pdo = get_db_connection();
 
-$sessions = $pdo->query("SELECT * FROM academic_sessions ORDER BY name DESC")->fetchAll();
+$sessions = get_all_academic_sessions();
 $terms = $pdo->query("SELECT * FROM terms ORDER BY name ASC")->fetchAll();
 $classes = $pdo->query("SELECT * FROM classes ORDER BY level ASC")->fetchAll();
 

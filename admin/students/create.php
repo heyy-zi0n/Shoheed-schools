@@ -7,8 +7,7 @@ $pageTitle = 'Add Student';
 $pdo = get_db_connection();
 
 $classes = $pdo->query("SELECT * FROM classes ORDER BY level")->fetchAll();
-$sessions = $pdo->query("SELECT * FROM academic_sessions WHERE is_active = 1")->fetchAll();
-$activeSession = $sessions[0] ?? null;
+$activeSession = get_active_academic_session();
 
 require __DIR__ . '/../../templates/layouts/app-header.php';
 ?>

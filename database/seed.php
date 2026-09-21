@@ -46,8 +46,14 @@ try {
 
     echo "Seeding Academic Sessions...\n";
     $stmt = $pdo->prepare("INSERT IGNORE INTO academic_sessions (name, is_active, start_date, end_date) VALUES (:name, :active, :start, :end)");
+    $stmt->execute(['name' => '2025/2026', 'active' => 0, 'start' => '2025-09-01', 'end' => '2026-07-31']);
     $stmt->execute(['name' => '2026/2027', 'active' => 1, 'start' => '2026-09-01', 'end' => '2027-07-31']);
+    $stmt->execute(['name' => '2027/2028', 'active' => 0, 'start' => '2027-09-01', 'end' => '2028-07-31']);
     
+    // Ensure only one is active at a time during seeding if re-run
+    $pdo->exec("UPDATE academic_sessions SET is_active = 0 WHERE name != '2026/2027'");
+    $pdo->exec("UPDATE academic_sessions SET is_active = 1 WHERE name = '2026/2027'");
+
     $stmt = $pdo->prepare("SELECT id FROM academic_sessions WHERE name = '2026/2027'");
     $stmt->execute();
     $sessionId = $stmt->fetchColumn();

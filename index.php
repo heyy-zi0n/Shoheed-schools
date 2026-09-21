@@ -64,7 +64,7 @@ $pageTitle = 'Home';
                     </a>
                 </div>
                 <div class="hidden md:flex items-center space-x-8">
-                    <a href="#" class="text-charcoal hover:text-school-blue font-medium text-sm transition-colors">Home</a>
+                    <a href="<?= url('') ?>" class="text-charcoal hover:text-school-blue font-medium text-sm transition-colors">Home</a>
                     <a href="#about" class="text-charcoal hover:text-school-blue font-medium text-sm transition-colors">About</a>
                     <a href="#academics" class="text-charcoal hover:text-school-blue font-medium text-sm transition-colors">Academics</a>
                     <a href="#admissions" class="text-charcoal hover:text-school-blue font-medium text-sm transition-colors">Admissions</a>
@@ -349,8 +349,8 @@ $pageTitle = 'Home';
             <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-gray-500">
                 <p>&copy; <?= date('Y') ?> Shoheed Schools. All rights reserved.</p>
                 <div class="flex space-x-6 mt-4 md:mt-0">
-                    <a href="#" class="hover:text-white transition-colors">Privacy Policy</a>
-                    <a href="#" class="hover:text-white transition-colors">Terms of Service</a>
+                    <a href="<?= url('') ?>" class="hover:text-white transition-colors">Privacy Policy</a>
+                    <a href="<?= url('') ?>" class="hover:text-white transition-colors">Terms of Service</a>
                 </div>
             </div>
         </div>

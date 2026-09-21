@@ -20,7 +20,7 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
             
             <?php
             $pdo = get_db_connection();
-            $sessions = $pdo->query("SELECT * FROM academic_sessions ORDER BY name DESC")->fetchAll();
+            $sessions = get_all_academic_sessions();
             $terms = $pdo->query("SELECT * FROM terms ORDER BY name ASC")->fetchAll();
             
             $sessionId = filter_var($_GET['academic_session_id'] ?? null, FILTER_VALIDATE_INT);

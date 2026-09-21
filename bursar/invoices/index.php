@@ -6,7 +6,7 @@ require_role([ROLE_BURSAR]);
 $pageTitle = 'Student Invoices';
 $pdo = get_db_connection();
 
-$activeSession = $pdo->query("SELECT * FROM academic_sessions WHERE is_active = 1")->fetch();
+$activeSession = get_active_academic_session();
 $activeTerm = $pdo->query("SELECT * FROM terms WHERE is_active = 1")->fetch();
 
 $invoices = [];
@@ -101,7 +101,7 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                                     <?php if ($invoice['status'] !== 'PAID'): ?>
                                     <a href="<?= url('bursar/payments/create.php?invoice=' . $invoice['id']) ?>" class="text-school-blue hover:text-school-navy mr-3">Record Payment</a>
                                     <?php endif; ?>
-                                    <a href="#" class="text-slate-gray hover:text-charcoal">View Details</a>
+
                                 </td>
                             </tr>
                             <?php endforeach; ?>

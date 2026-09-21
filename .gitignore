@@ -116,3 +116,8 @@ Master-Prompt.md
 *.swp
 *.swo
 *~
+# Local development / diagnostic scripts
+check_schema.php
+clean_11.php
+clean_duplicates.php
+test_uniqueness.php

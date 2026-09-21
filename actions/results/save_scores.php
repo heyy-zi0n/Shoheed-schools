@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../../config/bootstrap.php';
 
-require_role([ROLE_CLASS_TEACHER, ROLE_SUBJECT_TEACHER]);
+require_auth();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -27,7 +27,7 @@ try {
     $pdo = get_db_connection();
     
     // Get active session and term
-    $activeSession = $pdo->query("SELECT * FROM academic_sessions WHERE is_active = 1")->fetch();
+    $activeSession = get_active_academic_session();
     $activeTerm = $pdo->query("SELECT * FROM terms WHERE is_active = 1")->fetch();
     
     if (!$activeSession || !$activeTerm) {
@@ -35,12 +35,12 @@ try {
     }
     
     // Verify assignment (security check)
-    $userId = current_user_id();
-    $stmt = $pdo->prepare("SELECT s.id FROM staff s JOIN subject_teacher_assignments sta ON sta.staff_id = s.id WHERE s.user_id = :uid AND sta.class_id = :cid AND sta.subject_id = :sid AND sta.academic_session_id = :sess_id");
-    $stmt->execute(['uid' => $userId, 'cid' => $classId, 'sid' => $subjectId, 'sess_id' => $activeSession['id']]);
-    $staffId = $stmt->fetchColumn();
-    
+    $staffId = current_staff_id();
     if (!$staffId) {
+        throw new Exception("Access denied. You do not have a staff profile.");
+    }
+    
+    if (!staff_can_access_subject_assignment($staffId, $classId, $subjectId, $activeSession['id'])) {
         throw new Exception("You are not authorized to enter scores for this subject and class.");
     }
     

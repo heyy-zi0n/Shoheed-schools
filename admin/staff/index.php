@@ -72,7 +72,7 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                                     <?php endif; ?>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <a href="#" class="text-school-blue hover:text-school-navy">Edit</a>
+                                    <a href="<?= url('admin/staff/edit.php?id=' . $staff['id']) ?>" class="text-school-blue hover:text-school-navy">Edit</a>
                                 </td>
                             </tr>
                             <?php endforeach; ?>

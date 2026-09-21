@@ -15,7 +15,7 @@ if (!$studentId) {
     die("Student profile not found.");
 }
 
-$activeSession = $pdo->query("SELECT * FROM academic_sessions WHERE is_active = 1")->fetch();
+$activeSession = get_active_academic_session();
 $activeTerm = $pdo->query("SELECT * FROM terms WHERE is_active = 1")->fetch();
 
 $attendance = [];

@@ -60,6 +60,30 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                     </div>
                     
                     <div class="border-b border-gray-200 pb-4 mb-4 mt-8">
+                        <h3 class="text-lg font-medium text-school-navy">Teaching Eligibility</h3>
+                        <p class="text-xs text-slate-gray mt-1">These settings determine whether this staff member can be selected for academic teaching assignments. Actual subjects and classes are assigned by the Principal.</p>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-start">
+                            <div class="flex items-center h-5">
+                                <input id="can_teach_subjects" name="can_teach_subjects" type="checkbox" value="1" class="focus:ring-school-blue h-4 w-4 text-school-blue border-gray-300 rounded">
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label for="can_teach_subjects" class="font-medium text-charcoal">Can teach subjects</label>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="flex items-center h-5">
+                                <input id="can_be_class_teacher" name="can_be_class_teacher" type="checkbox" value="1" class="focus:ring-school-blue h-4 w-4 text-school-blue border-gray-300 rounded">
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label for="can_be_class_teacher" class="font-medium text-charcoal">Can serve as a Class Teacher</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="border-b border-gray-200 pb-4 mb-4 mt-8">
                         <h3 class="text-lg font-medium text-school-navy">Account Information</h3>
                     </div>
                     

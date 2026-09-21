@@ -76,7 +76,7 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                                     <?php endif; ?>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <a href="#" class="text-school-blue hover:text-school-navy">View</a>
+                                    <a href="<?= url('admin/students/view.php?id=' . $student['id']) ?>" class="text-school-blue hover:text-school-navy">View</a>
                                 </td>
                             </tr>
                             <?php endforeach; ?>

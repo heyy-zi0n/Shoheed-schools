@@ -1,13 +1,18 @@
 <?php
 require_once __DIR__ . '/../../config/bootstrap.php';
 
-require_role([ROLE_CLASS_TEACHER]);
+require_auth();
+
+$staffId = current_staff_id();
+if (!$staffId) {
+    set_flash('error', 'Access denied. You do not have a staff profile.');
+    redirect('');
+}
 
 $pageTitle = 'Class Attendance';
 $pdo = get_db_connection();
-$userId = current_user_id();
 
-$activeSession = $pdo->query("SELECT * FROM academic_sessions WHERE is_active = 1")->fetch();
+$activeSession = get_active_academic_session();
 $activeTerm = $pdo->query("SELECT * FROM terms WHERE is_active = 1")->fetch();
 
 if (!$activeSession || !$activeTerm) {
@@ -18,9 +23,7 @@ $classId = filter_input(INPUT_GET, 'class', FILTER_VALIDATE_INT);
 $dateStr = filter_input(INPUT_GET, 'date');
 $date = $dateStr ? date('Y-m-d', strtotime($dateStr)) : date('Y-m-d');
 
-$stmt = $pdo->prepare("SELECT id FROM staff WHERE user_id = :uid");
-$stmt->execute(['uid' => $userId]);
-$staffId = $stmt->fetchColumn();
+
 
 // Get assigned classes
 $stmt = $pdo->prepare("
@@ -60,11 +63,11 @@ $stmt = $pdo->prepare("
            a.status as attendance_status, a.id as attendance_id
     FROM students s
     JOIN student_enrollments se ON s.id = se.student_id
-    LEFT JOIN attendance a ON s.id = a.student_id AND a.attendance_date = :att_date AND a.academic_session_id = :sess_id
-    WHERE se.class_id = :class_id AND se.academic_session_id = :sess_id AND se.status = 'ACTIVE'
+    LEFT JOIN attendance a ON s.id = a.student_id AND a.attendance_date = :att_date AND a.academic_session_id = :sess_id_1
+    WHERE se.class_id = :class_id AND se.academic_session_id = :sess_id_2 AND se.status = 'ACTIVE'
     ORDER BY s.last_name ASC
 ");
-$stmt->execute(['class_id' => $classId, 'sess_id' => $activeSession['id'], 'att_date' => $date]);
+$stmt->execute(['class_id' => $classId, 'sess_id_1' => $activeSession['id'], 'sess_id_2' => $activeSession['id'], 'att_date' => $date]);
 $students = $stmt->fetchAll();
 
 require __DIR__ . '/../../templates/layouts/app-header.php';

@@ -79,3 +79,6 @@ require_once dirname(__DIR__) . '/core/auth.php';       // is_logged_in(), curre
 
 // ─── 11. Authorization ────────────────────────────────────────────────────────
 require_once dirname(__DIR__) . '/core/authorization.php'; // require_auth(), require_role()
+
+// ─── 12. Teaching Capabilities & Authorization ────────────────────────────────
+require_once dirname(__DIR__) . '/core/teaching.php';      // current_staff_id(), staff_has_subject_assignments(), etc.
