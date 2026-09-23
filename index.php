@@ -2,78 +2,20 @@
 require_once __DIR__ . '/config/app.php';
 require_once __DIR__ . '/config/bootstrap.php';
 $pageTitle = 'Home';
-?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= e($pageTitle) ?> | Shoheed Schools</title>
-    <link rel="icon" type="image/png" href="<?= url('assets/images/branding/shoheed-logo.png') ?>">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'school-blue': '#263B8F',
-                        'school-navy': '#111B3F',
-                        'school-red': '#C62828',
-                        'school-gold': '#E5B926',
-                        'ivory': '#F5F1E8',
-                        'paper': '#FFFDFC',
-                        'slate-gray': '#697386',
-                        'charcoal': '#20242C'
-                    },
-                    fontFamily: {
-                        'sans': ['Manrope', 'sans-serif'],
-                        'serif': ['DM Serif Display', 'serif']
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Manrope:wght@400;500;600;700&display=swap');
-    </style>
-    <link rel="stylesheet" href="<?= url('assets/css/app.css') ?>">
-    <link rel="stylesheet" href="<?= url('assets/css/print.css') ?>" media="print">
-</head>
-<body class="antialiased flex flex-col min-h-screen bg-ivory">
-    <!-- Utility Bar -->
-    <div class="bg-school-navy text-white text-xs py-2 px-6 flex justify-between items-center hidden md:flex">
-        <div class="flex space-x-6">
-            <span>+234 802 872 1204</span>
-            <span>Alakuko/Alagbado, Lagos</span>
-            <span>Morning Session: 8:00 AM – 3:00 PM</span>
-        </div>
-        <a href="<?= url('login.php') ?>" class="text-school-gold hover:text-white font-medium transition-colors">Portal Login</a>
-    </div>
 
-    <!-- Main Navigation -->
-    <nav class="bg-paper shadow-sm sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-20">
-                <div class="flex items-center">
-                    <a href="<?= url() ?>" class="flex items-center space-x-3">
-                        <img class="h-12 w-auto" src="<?= url('assets/images/branding/shoheed-logo.png') ?>" alt="Shoheed Schools">
-                        <div class="hidden sm:block">
-                            <h1 class="text-school-navy font-bold text-lg leading-tight uppercase tracking-wide">Shoheed Schools</h1>
-                            <p class="text-slate-gray text-[10px] uppercase font-bold tracking-[0.15em]">God Is Sufficient</p>
-                        </div>
-                    </a>
-                </div>
-                <div class="hidden md:flex items-center space-x-8">
-                    <a href="<?= url('') ?>" class="text-charcoal hover:text-school-blue font-medium text-sm transition-colors">Home</a>
-                    <a href="#about" class="text-charcoal hover:text-school-blue font-medium text-sm transition-colors">About</a>
-                    <a href="#academics" class="text-charcoal hover:text-school-blue font-medium text-sm transition-colors">Academics</a>
-                    <a href="#admissions" class="text-charcoal hover:text-school-blue font-medium text-sm transition-colors">Admissions</a>
-                    <a href="#contact" class="text-charcoal hover:text-school-blue font-medium text-sm transition-colors">Contact</a>
-                    <a href="<?= url('login.php') ?>" class="bg-school-blue text-white px-5 py-2.5 rounded hover:bg-school-navy transition-colors font-medium text-sm shadow-sm">Portal Access</a>
-                </div>
-            </div>
-        </div>
-    </nav>
+$pdo = get_db_connection();
+$stmt = $pdo->query("
+    SELECT id, first_name, last_name, profile_image, public_designation, staff_category
+    FROM staff 
+    WHERE show_in_directory = 1 AND status = 'ACTIVE' 
+    ORDER BY display_order ASC, last_name ASC 
+    LIMIT 4
+");
+$previewStaff = $stmt->fetchAll();
+
+$activePublicNav = 'home';
+require __DIR__ . '/templates/public/header.php';
+?>
 
     <!-- Hero Section -->
     <section class="relative bg-school-navy text-white overflow-hidden">
@@ -248,6 +190,46 @@ $pageTitle = 'Home';
         </div>
     </section>
 
+    <!-- Meet Our Team Preview -->
+    <section class="py-16 bg-white border-y border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h3 class="text-school-blue font-bold tracking-widest uppercase text-xs mb-3">Our Dedicated Team</h3>
+                <h2 class="text-3xl font-serif font-bold text-school-navy mb-6">Meet the Minds Shaping the Future</h2>
+                <p class="text-charcoal max-w-2xl mx-auto leading-relaxed">
+                    Our teaching and administrative staff are dedicated professionals committed to the academic and moral growth of every student.
+                </p>
+            </div>
+            
+            <?php if (!empty($previewStaff)): ?>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+                    <?php foreach ($previewStaff as $staff): ?>
+                        <div class="bg-ivory/30 rounded-lg shadow-sm border border-gray-100 overflow-hidden text-center p-6 hover:shadow-md transition-shadow">
+                            <div class="w-24 h-24 mx-auto rounded-full overflow-hidden border-4 border-white shadow-sm mb-4 bg-gray-100">
+                                <?php if (!empty($staff['profile_image'])): ?>
+                                    <img src="<?= url('media/staff-profile.php?id=' . urlencode((string)$staff['id'])) ?>" alt="<?= e($staff['first_name']) ?>" class="w-full h-full object-cover">
+                                <?php else: ?>
+                                    <div class="w-full h-full flex items-center justify-center bg-school-blue/10 text-school-blue font-bold text-xl">
+                                        <?= e(substr($staff['first_name'], 0, 1) . substr($staff['last_name'], 0, 1)) ?>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                            <h3 class="text-lg font-bold text-school-navy mb-1"><?= e($staff['first_name'] . ' ' . $staff['last_name']) ?></h3>
+                            <p class="text-school-red text-xs font-semibold uppercase tracking-wider mb-2"><?= e($staff['public_designation'] ?? 'Staff') ?></p>
+                            <p class="text-[10px] text-slate-gray uppercase"><?= $staff['staff_category'] === 'TEACHING' ? 'Teaching Staff' : 'Support Staff' ?></p>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+            
+            <div class="text-center">
+                <a href="<?= url('staff.php') ?>" class="inline-block bg-school-gold text-school-navy px-8 py-3 rounded font-bold hover:bg-school-navy hover:text-white transition-colors shadow-sm">
+                    View Full Directory &rarr;
+                </a>
+            </div>
+        </div>
+    </section>
+
     <!-- Leadership Message -->
     <section class="py-24 bg-school-navy text-white">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -292,71 +274,4 @@ $pageTitle = 'Home';
         </div>
     </section>
 
-    <!-- Footer -->
-    <footer id="contact" class="bg-charcoal text-white pt-20 pb-10 border-t-4 border-school-red">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
-                <div class="md:col-span-1">
-                    <div class="flex items-center space-x-3 mb-6 bg-white p-2 inline-flex rounded">
-                        <img src="<?= url('assets/images/branding/shoheed-logo.png') ?>" alt="Shoheed Logo" class="h-10 w-10 object-contain">
-                    </div>
-                    <h2 class="text-xl font-bold tracking-wide uppercase mb-2">Shoheed Schools</h2>
-                    <p class="text-school-gold text-xs uppercase tracking-widest font-bold mb-6">God Is Sufficient</p>
-                    <p class="text-gray-400 text-sm leading-relaxed">
-                        Providing structured and personalised education that develops academic ability, character, and future readiness.
-                    </p>
-                </div>
-                
-                <div>
-                    <h3 class="text-sm font-bold tracking-widest uppercase mb-6 text-gray-300">Headquarters</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed mb-4">
-                        5, Olufunmilayo Close,<br>
-                        Opposite Jendol Super Store,<br>
-                        Alakuko/Alagbado, Lagos.
-                    </p>
-                </div>
-                
-                <div>
-                    <h3 class="text-sm font-bold tracking-widest uppercase mb-6 text-gray-300">Annex</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed mb-4">
-                        Andiri Bus Stop,<br>
-                        Ibaragun,<br>
-                        Abule Lemode,<br>
-                        Ogun State.
-                    </p>
-                </div>
-                
-                <div>
-                    <h3 class="text-sm font-bold tracking-widest uppercase mb-6 text-gray-300">Contact Us</h3>
-                    <ul class="space-y-3 text-sm text-gray-400">
-                        <li class="flex items-center">
-                            <svg class="w-4 h-4 mr-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-                            +234 802 872 1204
-                        </li>
-                        <li class="flex items-center">
-                            <svg class="w-4 h-4 mr-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-                            +234 817 904 3226
-                        </li>
-                    </ul>
-                    <div class="mt-8">
-                        <a href="<?= url('login.php') ?>" class="inline-block border border-gray-600 text-gray-300 hover:text-white hover:border-white px-6 py-2 rounded text-sm transition-colors">
-                            Portal Login &rarr;
-                        </a>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-gray-500">
-                <p>&copy; <?= date('Y') ?> Shoheed Schools. All rights reserved.</p>
-                <div class="flex space-x-6 mt-4 md:mt-0">
-                    <a href="<?= url('') ?>" class="hover:text-white transition-colors">Privacy Policy</a>
-                    <a href="<?= url('') ?>" class="hover:text-white transition-colors">Terms of Service</a>
-                </div>
-            </div>
-        </div>
-    <script src="<?= url('assets/js/app.js') ?>"></script>
-    <script src="<?= url('assets/js/forms.js') ?>"></script>
-    <script src="<?= url('assets/js/modals.js') ?>"></script>
-    <script src="<?= url('assets/js/results.js') ?>"></script>
-</body>
-</html>
+<?php require_once __DIR__ . '/templates/public/footer.php'; ?>

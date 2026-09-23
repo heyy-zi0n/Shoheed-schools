@@ -4,8 +4,6 @@ if (has_role([ROLE_ADMIN, ROLE_PRINCIPAL, ROLE_CLASS_TEACHER, ROLE_SUBJECT_TEACH
     $roleGroup = 'STAFF';
 } elseif (has_role([ROLE_STUDENT])) {
     $roleGroup = 'STUDENTS';
-} elseif (has_role([ROLE_PARENT])) {
-    $roleGroup = 'PARENTS';
 }
 
 $pdo = get_db_connection();

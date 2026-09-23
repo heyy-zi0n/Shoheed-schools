@@ -74,7 +74,7 @@ try {
         $stStmt->execute([$batchId]);
         $audiences = $stStmt->fetchAll();
         
-        $notifStmt = $pdo->prepare("INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, 'RESULT_PUBLISHED')");
+        $notifStmt = $pdo->prepare("INSERT INTO notifications (user_id, title, message) VALUES (?, ?, ?)");
         
         $notifiedUsers = [];
         foreach ($audiences as $aud) {
@@ -96,6 +96,12 @@ try {
     $pdo->commit();
     set_flash('success', "Batch successfully " . ($actionType === 'publish' ? 'published' : 'approved') . ".");
     
+} catch (PDOException $e) {
+    if (isset($pdo) && $pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+    error_log("Database error in principal_approve: " . $e->getMessage());
+    set_flash('error', 'Unable to process the request due to a database error.');
 } catch (Exception $e) {
     if (isset($pdo) && $pdo->inTransaction()) {
         $pdo->rollBack();

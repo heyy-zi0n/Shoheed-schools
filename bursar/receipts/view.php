@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../../config/bootstrap.php';
 
-require_role([ROLE_ADMIN, ROLE_BURSAR, ROLE_PARENT, ROLE_STUDENT]);
+require_role([ROLE_ADMIN, ROLE_BURSAR, ROLE_STUDENT]);
 
 $receiptId = filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT);
 if (!$receiptId) {
@@ -49,19 +49,6 @@ if ($role === ROLE_STUDENT) {
     $userStmt->execute([current_user_id()]);
     $myStudentId = $userStmt->fetchColumn();
     if ($receipt['student_id'] != $myStudentId) {
-        http_response_code(403);
-        exit('Access Denied.');
-    }
-} elseif ($role === ROLE_PARENT) {
-    // Must be a child's receipt
-    $parentStmt = $pdo->prepare("
-        SELECT student_id 
-        FROM student_guardians sg 
-        JOIN guardians g ON sg.guardian_id = g.id 
-        WHERE g.user_id = ? AND sg.student_id = ?
-    ");
-    $parentStmt->execute([current_user_id(), $receipt['student_id']]);
-    if (!$parentStmt->fetchColumn()) {
         http_response_code(403);
         exit('Access Denied.');
     }

@@ -71,13 +71,12 @@ try {
     $className = $pdo->query("SELECT name FROM classes WHERE id = " . (int)$classId)->fetchColumn();
     $subjectName = $pdo->query("SELECT name FROM subjects WHERE id = " . (int)$subjectId)->fetchColumn();
     
-    $notifStmt = $pdo->prepare("INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)");
+    $notifStmt = $pdo->prepare("INSERT INTO notifications (user_id, title, message) VALUES (?, ?, ?)");
     foreach ($subjectTeachers as $st) {
         $notifStmt->execute([
             $st['user_id'],
             "Revision Required",
-            "The Class Teacher has requested a revision for {$subjectName} in {$className}. Reason: {$comments}",
-            'REVISION_REQUIRED'
+            "The Class Teacher has requested a revision for {$subjectName} in {$className}. Reason: {$comments}"
         ]);
     }
     
@@ -88,6 +87,12 @@ try {
     $pdo->commit();
     set_flash('success', 'Revision requested successfully.');
     
+} catch (PDOException $e) {
+    if (isset($pdo) && $pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+    error_log("Database error in request_revision: " . $e->getMessage());
+    set_flash('error', 'Unable to request revision due to a database error.');
 } catch (Exception $e) {
     if (isset($pdo) && $pdo->inTransaction()) {
         $pdo->rollBack();

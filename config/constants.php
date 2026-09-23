@@ -23,6 +23,11 @@ define('ATTENDANCE_ABSENT', 'Absent');
 define('ATTENDANCE_LATE', 'Late');
 define('ATTENDANCE_EXCUSED', 'Excused');
 
+// Session Configuration
+define('SESSION_IDLE_TIMEOUT', 1800);     // 30 minutes
+define('SESSION_ABSOLUTE_TIMEOUT', 28800); // 8 hours
+define('SESSION_REGEN_INTERVAL', 1800);    // 30 minutes
+
 // Invoice Statuses
 define('INVOICE_PENDING', 'PENDING');
 define('INVOICE_PARTIAL', 'PARTIAL');

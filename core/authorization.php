@@ -8,6 +8,7 @@ function require_auth(): void {
     if (!is_logged_in()) {
         redirect('login.php');
     }
+    enforce_session_timeout();
 }
 
 function require_role(array $allowedRoles): void {

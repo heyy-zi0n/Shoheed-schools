@@ -105,7 +105,12 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                     </div>
                 <?php elseif ($readonly): ?>
                     <div class="mb-6 p-4 bg-blue-50 text-blue-800 rounded-md text-sm border border-blue-200">
-                        These scores have been submitted and are currently locked from editing.
+                        <?php 
+                            if ($classStatus === 'PUBLISHED') echo 'This result has been published and can no longer be edited.';
+                            elseif ($classStatus === 'PRINCIPAL_APPROVED') echo 'This result has been approved by the Principal and is locked from editing.';
+                            elseif ($classStatus === 'CLASS_TEACHER_VERIFIED') echo 'This result has been verified by the Class Teacher and is locked from editing.';
+                            else echo 'These scores have been submitted and are currently locked from editing.';
+                        ?>
                     </div>
                 <?php endif; ?>
                 

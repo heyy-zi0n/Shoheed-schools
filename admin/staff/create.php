@@ -60,9 +60,84 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                     </div>
                     
                     <div class="border-b border-gray-200 pb-4 mb-4 mt-8">
-                        <h3 class="text-lg font-medium text-school-navy">Teaching Eligibility</h3>
-                        <p class="text-xs text-slate-gray mt-1">These settings determine whether this staff member can be selected for academic teaching assignments. Actual subjects and classes are assigned by the Principal.</p>
+                        <h3 class="text-lg font-medium text-school-navy">System Access</h3>
                     </div>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-center">
+                            <input id="access_portal" name="portal_access" type="radio" value="PORTAL_ENABLED" checked class="focus:ring-school-blue h-4 w-4 text-school-blue border-gray-300">
+                            <label for="access_portal" class="ml-3 block text-sm font-medium text-charcoal">
+                                Portal Enabled (Create User Account)
+                            </label>
+                        </div>
+                        <div class="flex items-center">
+                            <input id="access_directory" name="portal_access" type="radio" value="DIRECTORY_ONLY" class="focus:ring-school-blue h-4 w-4 text-school-blue border-gray-300">
+                            <label for="access_directory" class="ml-3 block text-sm font-medium text-charcoal">
+                                Directory Only (No Login Account)
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="border-b border-gray-200 pb-4 mb-4 mt-8">
+                        <h3 class="text-lg font-medium text-school-navy">Public Directory Profile</h3>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="staff_category" class="block text-sm font-medium text-charcoal">Staff Category *</label>
+                            <select id="staff_category" name="staff_category" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-school-blue focus:border-school-blue sm:text-sm">
+                                <option value="">Select category...</option>
+                                <option value="TEACHING">Teaching Staff</option>
+                                <option value="NON_TEACHING">Non-Teaching Staff</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="public_designation" class="block text-sm font-medium text-charcoal">Public Designation *</label>
+                            <input type="text" name="public_designation" id="public_designation" placeholder="e.g. Mathematics Teacher, School Secretary" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-school-blue focus:border-school-blue sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="public_email" class="block text-sm font-medium text-charcoal">Public Email (Optional)</label>
+                            <input type="email" name="public_email" id="public_email" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-school-blue focus:border-school-blue sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="public_phone" class="block text-sm font-medium text-charcoal">Public Phone (Optional)</label>
+                            <input type="text" name="public_phone" id="public_phone" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-school-blue focus:border-school-blue sm:text-sm">
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <label for="qualification" class="block text-sm font-medium text-charcoal">Qualification (Optional)</label>
+                        <input type="text" name="qualification" id="qualification" placeholder="e.g. B.Sc. Education" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-school-blue focus:border-school-blue sm:text-sm">
+                    </div>
+                    
+                    <div class="mt-6">
+                        <label for="short_bio" class="block text-sm font-medium text-charcoal">Short Bio (Optional)</label>
+                        <textarea id="short_bio" name="short_bio" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-school-blue focus:border-school-blue sm:text-sm"></textarea>
+                    </div>
+                    
+                    <div class="mt-6 space-y-4">
+                        <div class="flex items-start">
+                            <div class="flex items-center h-5">
+                                <input id="show_in_directory" name="show_in_directory" type="checkbox" value="1" class="focus:ring-school-blue h-4 w-4 text-school-blue border-gray-300 rounded">
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label for="show_in_directory" class="font-medium text-charcoal">Show in Public Directory</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        <div>
+                            <label for="display_order" class="block text-sm font-medium text-charcoal">Display Order Priority (Lower appears first)</label>
+                            <input type="number" name="display_order" id="display_order" value="100" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-school-blue focus:border-school-blue sm:text-sm">
+                        </div>
+                    </div>
+                    
+                    <div id="section-teaching-eligibility">
+                        <div class="border-b border-gray-200 pb-4 mb-4 mt-8">
+                            <h3 class="text-lg font-medium text-school-navy">Teaching Eligibility</h3>
+                            <p class="text-xs text-slate-gray mt-1">These settings determine whether this staff member can be selected for academic teaching assignments. Actual subjects and classes are assigned by the Principal.</p>
+                        </div>
                     
                     <div class="space-y-4">
                         <div class="flex items-start">
@@ -83,9 +158,10 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                         </div>
                     </div>
                     
-                    <div class="border-b border-gray-200 pb-4 mb-4 mt-8">
-                        <h3 class="text-lg font-medium text-school-navy">Account Information</h3>
-                    </div>
+                    <div id="section-account-info">
+                        <div class="border-b border-gray-200 pb-4 mb-4 mt-8">
+                            <h3 class="text-lg font-medium text-school-navy">Account Information</h3>
+                        </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
@@ -110,6 +186,7 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                             <input type="password" name="password" id="password" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-school-blue focus:border-school-blue sm:text-sm">
                         </div>
                     </div>
+                    </div>
                     
                     <div class="pt-5 border-t border-gray-200 mt-8 flex justify-end">
                         <button type="submit" class="bg-school-blue text-white px-6 py-2 rounded font-medium text-sm hover:bg-school-navy transition-colors shadow-sm">Save Staff Member</button>
@@ -120,4 +197,40 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
         </main>
     </div>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const portalRadios = document.querySelectorAll('input[name="portal_access"]');
+        const teachingSection = document.getElementById('section-teaching-eligibility');
+        const accountSection = document.getElementById('section-account-info');
+        
+        function toggleSections() {
+            const isPortal = document.getElementById('access_portal').checked;
+            
+            if (isPortal) {
+                teachingSection.style.display = 'block';
+                accountSection.style.display = 'block';
+                
+                document.getElementById('role_id').required = true;
+                document.getElementById('username').required = true;
+                document.getElementById('password').required = true;
+            } else {
+                teachingSection.style.display = 'none';
+                accountSection.style.display = 'none';
+                
+                document.getElementById('role_id').required = false;
+                document.getElementById('username').required = false;
+                document.getElementById('password').required = false;
+                
+                document.getElementById('can_teach_subjects').checked = false;
+                document.getElementById('can_be_class_teacher').checked = false;
+            }
+        }
+        
+        portalRadios.forEach(radio => {
+            radio.addEventListener('change', toggleSections);
+        });
+        
+        toggleSections(); // Initial state
+    });
+</script>
 <?php require __DIR__ . '/../../templates/layouts/app-footer.php'; ?>

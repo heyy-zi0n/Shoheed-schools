@@ -93,16 +93,18 @@ if ($activeSession && $activeClass) {
 }
 echo "Student user ID: {$studentUserId}, student ID: {$studentId}\n";
 
-// 7. Parent/Guardian
-$parentUserId = create_user($pdo, 'parent01', 'parent01@shoheed.edu', 'parent123', $roles[ROLE_PARENT]);
-$stmt = $pdo->prepare("INSERT IGNORE INTO guardians (user_id, first_name, last_name, phone) VALUES (?, 'Ngozi', 'Obiora', '08012345678')");
-$stmt->execute([$parentUserId]);
-$guardianId = $pdo->query("SELECT id FROM guardians WHERE user_id = {$parentUserId}")->fetchColumn();
+// 7. Parent/Guardian (Deprecated - Users no longer receive ROLE_PARENT)
+$stmt = $pdo->prepare("INSERT IGNORE INTO guardians (user_id, first_name, last_name, phone) VALUES (NULL, 'Ngozi', 'Obiora', '08012345678')");
+$stmt->execute();
+$guardianId = $pdo->lastInsertId();
+if (!$guardianId) {
+    $guardianId = $pdo->query("SELECT id FROM guardians WHERE phone = '08012345678'")->fetchColumn();
+}
 
 // Link guardian to student
 $stmt = $pdo->prepare("INSERT IGNORE INTO student_guardians (student_id, guardian_id, relationship) VALUES (?, ?, 'MOTHER')");
 $stmt->execute([$studentId, $guardianId]);
-echo "Parent user ID: {$parentUserId}, guardian ID: {$guardianId}\n";
+echo "Guardian ID: {$guardianId}\n";
 
 echo "\n=== SEEDING COMPLETE ===\n";
 echo "Accounts created:\n";

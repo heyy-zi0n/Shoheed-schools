@@ -8,7 +8,6 @@ if (is_logged_in()) {
     if (in_array($role, [ROLE_CLASS_TEACHER, ROLE_SUBJECT_TEACHER], true)) redirect('teacher/dashboard.php');
     if ($role === ROLE_BURSAR) redirect('bursar/dashboard.php');
     if ($role === ROLE_STUDENT) redirect('student/dashboard.php');
-    if ($role === ROLE_PARENT) redirect('parent/dashboard.php');
     redirect('index.php');
 }
 

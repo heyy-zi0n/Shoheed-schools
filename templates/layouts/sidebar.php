@@ -47,10 +47,6 @@
             <div class="px-6 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Student Area</div>
             <a href="<?= url('student/dashboard.php') ?>" class="block px-6 py-2 text-sm text-gray-300 hover:text-white hover:bg-school-blue transition-colors">Dashboard</a>
             <a href="<?= url('student/results.php') ?>" class="block px-6 py-2 text-sm text-gray-300 hover:text-white hover:bg-school-blue transition-colors">My Results</a>
-        <?php elseif ($role === ROLE_PARENT): ?>
-            <div class="px-6 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Parent Area</div>
-            <a href="<?= url('parent/dashboard.php') ?>" class="block px-6 py-2 text-sm text-gray-300 hover:text-white hover:bg-school-blue transition-colors">Dashboard</a>
-            <a href="<?= url('parent/children.php') ?>" class="block px-6 py-2 text-sm text-gray-300 hover:text-white hover:bg-school-blue transition-colors">My Children</a>
         <?php endif; ?>
 
         <?php 

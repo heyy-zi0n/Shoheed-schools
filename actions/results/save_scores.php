@@ -61,7 +61,14 @@ try {
         
         // If the CLASS batch is already verified/approved, block all edits
         if (in_array($batchStatus, ['CLASS_TEACHER_VERIFIED', 'PRINCIPAL_APPROVED', 'PUBLISHED'])) {
-            throw new Exception("The result batch for this class is already verified and locked.");
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            $msg = "This result batch is locked.";
+            if ($batchStatus === 'CLASS_TEACHER_VERIFIED') $msg = "This result has been verified by the Class Teacher and is locked from editing.";
+            elseif ($batchStatus === 'PRINCIPAL_APPROVED') $msg = "This result has been approved by the Principal and is locked from editing.";
+            elseif ($batchStatus === 'PUBLISHED') $msg = "This result has been published and can no longer be edited.";
+            
+            set_flash('warning', $msg);
+            redirect("teacher/results/enter.php?class={$classId}&subject={$subjectId}");
         }
     } else {
         // Create batch
@@ -79,7 +86,9 @@ try {
     
     if ($subSub) {
         if ($subSub['status'] === 'SUBMITTED') {
-            throw new Exception("These scores have already been submitted and are locked from editing.");
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            set_flash('warning', "These scores have already been submitted and are currently locked from editing.");
+            redirect("teacher/results/enter.php?class={$classId}&subject={$subjectId}");
         }
         $stmt = $pdo->prepare("UPDATE subject_submissions SET status = ?, comments = NULL WHERE id = ?");
         $stmt->execute([$targetSubjectStatus, $subSub['id']]);
@@ -120,13 +129,12 @@ try {
         $className = $pdo->query("SELECT name FROM classes WHERE id = " . (int)$classId)->fetchColumn();
         $subjectName = $pdo->query("SELECT name FROM subjects WHERE id = " . (int)$subjectId)->fetchColumn();
         
-        $notifStmt = $pdo->prepare("INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)");
+        $notifStmt = $pdo->prepare("INSERT INTO notifications (user_id, title, message) VALUES (?, ?, ?)");
         foreach ($classTeachers as $ct) {
             $notifStmt->execute([
                 $ct['user_id'],
                 "Scores Submitted",
-                "Scores for {$subjectName} in {$className} have been submitted for verification.",
-                'RESULT_SUBMITTED'
+                "Scores for {$subjectName} in {$className} have been submitted for verification."
             ]);
         }
     }
@@ -134,7 +142,7 @@ try {
     // 5. Audit log
     $auditStmt = $pdo->prepare("INSERT INTO audit_logs (user_id, action, entity_type, entity_id, description) VALUES (?, ?, ?, ?, ?)");
     $auditStmt->execute([
-        $userId,
+        current_user_id(),
         $targetSubjectStatus === 'SUBMITTED' ? 'SUBMIT_SCORES' : 'SAVE_SCORES_DRAFT',
         'result_batch',
         $batchId,
@@ -146,6 +154,13 @@ try {
     
     redirect("teacher/results/enter.php?class={$classId}&subject={$subjectId}");
     
+} catch (PDOException $e) {
+    if (isset($pdo) && $pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+    error_log("Database error in save_scores: " . $e->getMessage());
+    set_flash('error', 'Unable to save the results due to a database error. Please try again.');
+    redirect("teacher/results/enter.php?class={$classId}&subject={$subjectId}");
 } catch (Exception $e) {
     if (isset($pdo) && $pdo->inTransaction()) {
         $pdo->rollBack();

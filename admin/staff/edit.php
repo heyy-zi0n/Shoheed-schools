@@ -12,13 +12,15 @@ if (!$staffId) {
 $pdo = get_db_connection();
 
 $stmt = $pdo->prepare("
-    SELECT s.*, u.username, u.email, u.status 
+    SELECT s.*, u.username, u.email as user_email, u.status as user_status 
     FROM staff s 
-    JOIN users u ON s.user_id = u.id 
+    LEFT JOIN users u ON s.user_id = u.id 
     WHERE s.id = ?
 ");
 $stmt->execute([$staffId]);
 $staff = $stmt->fetch();
+
+$isPortalEnabled = $staff['user_id'] !== null;
 
 if (!$staff) {
     set_flash('error', 'Staff member not found.');
@@ -41,13 +43,20 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
 
             <div class="mb-8">
                 <h1 class="text-2xl font-serif font-bold text-school-navy">Edit Staff Member</h1>
-                <p class="text-sm text-slate-gray">Update biological and account details for <?= e($staff['first_name'] . ' ' . $staff['last_name']) ?>.</p>
+                <p class="text-sm text-slate-gray">Update biological, public directory, and account details for <?= e($staff['first_name'] . ' ' . $staff['last_name']) ?>.</p>
             </div>
             
             <div class="bg-paper p-6 rounded-lg shadow-sm border border-gray-100 max-w-2xl">
-                <form action="<?= url('actions/staff/edit.php') ?>" method="POST">
+                <form action="<?= url('actions/staff/edit.php') ?>" method="POST" enctype="multipart/form-data">
                     <?= csrf_field() ?>
                     <input type="hidden" name="id" value="<?= (int)$staff['id'] ?>">
+                    
+                    <div class="mb-6 flex items-center justify-between bg-blue-50 border border-blue-100 p-4 rounded text-sm text-school-blue font-medium">
+                        <div>
+                            <span>System Access Mode: </span>
+                            <span class="font-bold"><?= $isPortalEnabled ? 'Portal Enabled' : 'Directory Only (No Portal Account)' ?></span>
+                        </div>
+                    </div>
                     
                     <h3 class="text-lg font-bold text-school-navy mb-4 border-b pb-2">Personal Information</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -81,7 +90,82 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                         </div>
                         <div>
                             <label class="block text-sm font-bold text-slate-gray mb-1" for="email">Email Address</label>
-                            <input type="email" id="email" name="email" value="<?= e($staff['email']) ?>"
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-gray mb-1" for="staff_status">Employment Status</label>
+                            <select id="staff_status" name="staff_status" required
+                                    class="w-full border border-gray-300 rounded p-2 focus:ring-school-blue focus:border-school-blue">
+                                <option value="ACTIVE" <?= ($staff['status'] ?? 'ACTIVE') === 'ACTIVE' ? 'selected' : '' ?>>Active</option>
+                                <option value="INACTIVE" <?= ($staff['status'] ?? '') === 'INACTIVE' ? 'selected' : '' ?>>Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label class="block text-sm font-bold text-slate-gray mb-1" for="profile_image">Profile Image</label>
+                        <?php if (!empty($staff['profile_image'])): ?>
+                            <div class="mb-2">
+                                <img src="<?= url('media/staff-profile.php?id=' . urlencode((string)$staff['id'])) ?>" alt="Profile" class="h-16 w-16 rounded-full object-cover border">
+                            </div>
+                        <?php endif; ?>
+                        <input type="file" id="profile_image" name="profile_image" accept="image/jpeg,image/png,image/webp"
+                               class="w-full border border-gray-300 rounded p-2 focus:ring-school-blue focus:border-school-blue">
+                        <p class="text-xs text-gray-500 mt-1">Leave blank to keep existing image. Uploading updates the canonical staff photo.</p>
+                    </div>
+
+                    <h3 class="text-lg font-bold text-school-navy mb-4 border-b pb-2 mt-8">Public Directory Profile</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-gray mb-1" for="staff_category">Staff Category *</label>
+                            <select id="staff_category" name="staff_category" required
+                                    class="w-full border border-gray-300 rounded p-2 focus:ring-school-blue focus:border-school-blue">
+                                <option value="TEACHING" <?= $staff['staff_category'] === 'TEACHING' ? 'selected' : '' ?>>Teaching Staff</option>
+                                <option value="NON_TEACHING" <?= $staff['staff_category'] === 'NON_TEACHING' ? 'selected' : '' ?>>Non-Teaching Staff</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-gray mb-1" for="public_designation">Public Designation *</label>
+                            <input type="text" id="public_designation" name="public_designation" value="<?= e($staff['public_designation']) ?>" required placeholder="e.g. Mathematics Teacher"
+                                   class="w-full border border-gray-300 rounded p-2 focus:ring-school-blue focus:border-school-blue">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-gray mb-1" for="public_email">Public Email (Optional)</label>
+                            <input type="email" id="public_email" name="public_email" value="<?= e($staff['public_email']) ?>"
+                                   class="w-full border border-gray-300 rounded p-2 focus:ring-school-blue focus:border-school-blue">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-gray mb-1" for="public_phone">Public Phone (Optional)</label>
+                            <input type="text" id="public_phone" name="public_phone" value="<?= e($staff['public_phone']) ?>"
+                                   class="w-full border border-gray-300 rounded p-2 focus:ring-school-blue focus:border-school-blue">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label class="block text-sm font-bold text-slate-gray mb-1" for="qualification">Qualification (Optional)</label>
+                        <input type="text" id="qualification" name="qualification" value="<?= e($staff['qualification']) ?>" placeholder="e.g. B.Sc. Education"
+                               class="w-full border border-gray-300 rounded p-2 focus:ring-school-blue focus:border-school-blue">
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label class="block text-sm font-bold text-slate-gray mb-1" for="short_bio">Short Bio (Optional)</label>
+                        <textarea id="short_bio" name="short_bio" rows="3" class="w-full border border-gray-300 rounded p-2 focus:ring-school-blue focus:border-school-blue"><?= e($staff['short_bio']) ?></textarea>
+                    </div>
+                    
+                    <div class="space-y-4 mb-6">
+                        <div class="flex items-start">
+                            <div class="flex items-center h-5">
+                                <input id="show_in_directory" name="show_in_directory" type="checkbox" value="1" <?= $staff['show_in_directory'] ? 'checked' : '' ?> class="focus:ring-school-blue h-4 w-4 text-school-blue border-gray-300 rounded">
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label for="show_in_directory" class="font-bold text-slate-gray">Show in Public Directory</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-gray mb-1" for="display_order">Display Order Priority</label>
+                            <input type="number" id="display_order" name="display_order" value="<?= (int)$staff['display_order'] ?>"
                                    class="w-full border border-gray-300 rounded p-2 focus:ring-school-blue focus:border-school-blue">
                         </div>
                     </div>
@@ -107,23 +191,40 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                         </div>
                     </div>
 
+                    <?php if ($isPortalEnabled): ?>
                     <h3 class="text-lg font-bold text-school-navy mb-4 border-b pb-2 mt-8">Account Settings</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                         <div>
                             <label class="block text-sm font-bold text-slate-gray mb-1" for="username">Username</label>
-                            <input type="text" id="username" value="<?= e($staff['username']) ?>" disabled
-                                   class="w-full border border-gray-200 bg-gray-50 rounded p-2 text-slate-gray">
-                            <p class="text-xs text-gray-500 mt-1">Username cannot be changed.</p>
+                            <input type="text" id="username" name="username" value="<?= e($staff['username']) ?>" required
+                                   class="w-full border border-gray-300 rounded p-2 focus:ring-school-blue focus:border-school-blue">
+                            <p class="text-xs text-gray-500 mt-1">Username is used to sign in to the portal and must be unique.</p>
                         </div>
                         <div>
-                            <label class="block text-sm font-bold text-slate-gray mb-1" for="status">Account Status</label>
-                            <select id="status" name="status" required
+                            <label class="block text-sm font-bold text-slate-gray mb-1" for="user_status">Login Access Status</label>
+                            <select id="user_status" name="user_status" required
                                     class="w-full border border-gray-300 rounded p-2 focus:ring-school-blue focus:border-school-blue">
-                                <option value="ACTIVE" <?= $staff['status'] === 'ACTIVE' ? 'selected' : '' ?>>Active</option>
-                                <option value="INACTIVE" <?= $staff['status'] === 'INACTIVE' ? 'selected' : '' ?>>Inactive</option>
+                                <option value="ACTIVE" <?= $staff['user_status'] === 'ACTIVE' ? 'selected' : '' ?>>Active</option>
+                                <option value="INACTIVE" <?= $staff['user_status'] === 'INACTIVE' ? 'selected' : '' ?>>Inactive</option>
                             </select>
                         </div>
                     </div>
+                    
+                    <h3 class="text-lg font-bold text-school-navy mb-4 border-b pb-2 mt-8">Password Reset</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-gray mb-1" for="new_password">New Password</label>
+                            <input type="password" id="new_password" name="new_password" autocomplete="new-password"
+                                   class="w-full border border-gray-300 rounded p-2 focus:ring-school-blue focus:border-school-blue">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-gray mb-1" for="confirm_password">Confirm New Password</label>
+                            <input type="password" id="confirm_password" name="confirm_password" autocomplete="new-password"
+                                   class="w-full border border-gray-300 rounded p-2 focus:ring-school-blue focus:border-school-blue">
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mb-6">Leave both password fields blank to keep the current password.</p>
+                    <?php endif; ?>
                     
                     <div class="flex justify-end gap-3 mt-8">
                         <a href="<?= url('admin/staff/index.php') ?>" class="px-4 py-2 border border-gray-300 rounded text-charcoal hover:bg-gray-50 transition-colors">Cancel</a>

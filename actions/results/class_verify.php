@@ -75,25 +75,30 @@ try {
     $histStmt->execute([$batchId, $userId, 'SUBMITTED', 'CLASS_TEACHER_VERIFIED', "Class teacher verified results."]);
     
     // Notify principals
-    $prStmt = $pdo->prepare("SELECT u.id as user_id FROM staff s JOIN users u ON s.user_id = u.id WHERE u.role_id = ?");
+    $prStmt = $pdo->prepare("SELECT u.id as user_id FROM staff s JOIN users u ON s.user_id = u.id JOIN roles r ON u.role_id = r.id WHERE r.name = ?");
     $prStmt->execute([ROLE_PRINCIPAL]);
     $principals = $prStmt->fetchAll();
     
     $className = $pdo->query("SELECT name FROM classes WHERE id = " . (int)$classId)->fetchColumn();
     
-    $notifStmt = $pdo->prepare("INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)");
+    $notifStmt = $pdo->prepare("INSERT INTO notifications (user_id, title, message) VALUES (?, ?, ?)");
     foreach ($principals as $pr) {
         $notifStmt->execute([
             $pr['user_id'],
             "Class Results Verified",
-            "Results for {$className} have been verified by the Class Teacher and await your approval.",
-            'CLASS_VERIFIED'
+            "Results for {$className} have been verified by the Class Teacher and await your approval."
         ]);
     }
     
     $pdo->commit();
     set_flash('success', 'Class results successfully verified and sent to Principal.');
     
+} catch (PDOException $e) {
+    if (isset($pdo) && $pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+    error_log("Database error in class_verify: " . $e->getMessage());
+    set_flash('error', 'Unable to verify the class due to a database error.');
 } catch (Exception $e) {
     if (isset($pdo) && $pdo->inTransaction()) {
         $pdo->rollBack();

@@ -4,31 +4,206 @@ require_once __DIR__ . '/../config/bootstrap.php';
 require_role([ROLE_STUDENT]);
 
 $pageTitle = 'Student Dashboard';
+$pdo = get_db_connection();
+$userId = current_user_id();
+
+// Fetch the actual student record
+$stmt = $pdo->prepare("SELECT * FROM students WHERE user_id = ?");
+$stmt->execute([$userId]);
+$student = $stmt->fetch();
+
+$activeSession = get_active_academic_session();
+$sessionId = $activeSession['id'] ?? null;
+$term = $pdo->query("SELECT name FROM terms WHERE is_active = 1 LIMIT 1")->fetchColumn() ?: 'Current Term';
+
+$currentClass = null;
+$publishedResults = 0;
+$attendancePercentage = null;
+$feeBalance = 0;
+
+if ($student && $sessionId) {
+    // Current Enrollment
+    $enrollStmt = $pdo->prepare("
+        SELECT c.name, c.level 
+        FROM student_enrollments se 
+        JOIN classes c ON se.class_id = c.id 
+        WHERE se.student_id = ? AND se.academic_session_id = ? AND se.status = 'ACTIVE'
+    ");
+    $enrollStmt->execute([$student['id'], $sessionId]);
+    $currentClass = $enrollStmt->fetch();
+    
+    // Published Results
+    $resStmt = $pdo->prepare("
+        SELECT COUNT(DISTINCT rb.id)
+        FROM scores s
+        JOIN result_batches rb ON s.result_batch_id = rb.id
+        WHERE s.student_id = ? AND rb.academic_session_id = ? AND rb.status = 'PUBLISHED'
+    ");
+    $resStmt->execute([$student['id'], $sessionId]);
+    $publishedResults = $resStmt->fetchColumn();
+    
+
+    $attendanceAvailable = true;
+    try {
+        $attStmt = $pdo->prepare("
+            SELECT 
+                COUNT(*) as total_days,
+                SUM(CASE WHEN status = 'PRESENT' THEN 1 ELSE 0 END) as present_days
+            FROM attendance 
+            WHERE student_id = ? AND academic_session_id = ?
+        ");
+        $attStmt->execute([$student['id'], $sessionId]);
+        $attData = $attStmt->fetch();
+        if ($attData && $attData['total_days'] > 0) {
+            $attendancePercentage = round(($attData['present_days'] / $attData['total_days']) * 100);
+        }
+    } catch (PDOException $e) {
+        error_log("Dashboard Error (Attendance): " . $e->getMessage());
+        $attendanceAvailable = false;
+    }
+    
+
+    // Finance
+    $financeAvailable = true;
+    try {
+        $feeStmt = $pdo->prepare("SELECT SUM(total_amount) FROM student_invoices WHERE student_id = ?");
+        $feeStmt->execute([$student['id']]);
+        $totalInv = $feeStmt->fetchColumn() ?: 0;
+        
+        $paidStmt = $pdo->prepare("SELECT SUM(amount) FROM payments p JOIN student_invoices si ON p.student_invoice_id = si.id WHERE si.student_id = ?");
+        $paidStmt->execute([$student['id']]);
+        $totalPd = $paidStmt->fetchColumn() ?: 0;
+        
+        $pendingStmt = $pdo->prepare("SELECT SUM(amount) FROM payment_submissions WHERE student_id = ? AND status = 'PENDING'");
+        $pendingStmt->execute([$student['id']]);
+        $totalPending = $pendingStmt->fetchColumn() ?: 0;
+        
+        $feeBalance = $totalInv - $totalPd;
+    } catch (PDOException $e) {
+        error_log("Dashboard Error (Finance): " . $e->getMessage());
+        $financeAvailable = false;
+    }
+}
+
+$unreadNotifStmt = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0");
+$unreadNotifStmt->execute([$userId]);
+$unreadNotifs = (int)$unreadNotifStmt->fetchColumn();
+
 require __DIR__ . '/../templates/layouts/app-header.php';
 ?>
 <div class="flex h-screen overflow-hidden">
     <?php require __DIR__ . '/../templates/layouts/sidebar.php'; ?>
     <div class="flex-1 flex flex-col overflow-hidden">
         <?php require __DIR__ . '/../templates/layouts/topbar.php'; ?>
+        
         <main class="flex-1 overflow-x-hidden overflow-y-auto bg-ivory p-6">
             <?php require __DIR__ . '/../templates/components/alert.php'; ?>
             
-            <div class="mb-8">
-                <h1 class="text-2xl font-serif font-bold text-school-navy">Student Dashboard</h1>
-                <p class="text-sm text-slate-gray">Welcome to your portal.</p>
-            </div>
-            
-            <div class="bg-paper p-8 rounded-lg shadow-sm border border-gray-100">
-                <p class="text-charcoal mb-4">Welcome back to your dashboard. Use the sidebar to navigate your academic records, attendance, and finances.</p>
-                <div class="flex space-x-4">
-                    <a href="<?= url('student/results.php') ?>" class="bg-school-blue text-white px-4 py-2 rounded text-sm hover:bg-school-navy transition-colors">View Results</a>
-                    <a href="<?= url('student/attendance.php') ?>" class="bg-gray-200 text-charcoal px-4 py-2 rounded text-sm hover:bg-gray-300 transition-colors">View Attendance</a>
+            <?php if (!$student): ?>
+                <div class="p-8 text-center">
+                    <p class="text-school-red font-bold">Your student profile could not be found. Please contact administration.</p>
                 </div>
-            </div>
+            <?php else: ?>
             
-            <?php require __DIR__ . '/../templates/components/announcements_widget.php'; ?>
-            
+                <!-- Hero Section -->
+                <div class="mb-8 bg-school-navy rounded-xl p-8 text-white shadow-md relative overflow-hidden">
+                    <div class="relative z-10">
+                        <h1 class="text-3xl font-serif font-bold mb-2">Welcome back, <?= e($student['first_name']) ?>!</h1>
+                        <p class="text-blue-200">
+                            <?= $currentClass ? 'You are currently in ' . e($currentClass['name']) . ' for the ' . e($activeSession['name'] ?? '') . ' session.' : 'Your academic overview.' ?>
+                        </p>
+                    </div>
+                    <div class="absolute top-0 right-0 -mt-8 -mr-8 w-48 h-48 bg-school-gold opacity-10 rounded-full blur-2xl"></div>
+                </div>
+                
+                <!-- Metrics Row -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <?php 
+                    
+                        render_metric('Current Class', $currentClass['name'] ?? 'Not Enrolled', null, 'school-blue');
+                    render_metric('Published Results', $publishedResults, null, 'school-gold', url('student/results.php'));
+                    
+                    if (isset($attendanceAvailable) && $attendanceAvailable) {
+                        if ($attendancePercentage !== null) {
+                            render_metric('Attendance', $attendancePercentage . '%', 'This session', $attendancePercentage > 75 ? 'sage' : 'school-red', url('student/attendance.php'));
+                        } else {
+                            render_metric('Attendance', 'No records', 'This session', 'slate-gray', url('student/attendance.php'));
+                        }
+                    } else {
+                        render_metric('Attendance', 'Error', 'Data unavailable', 'school-red');
+                    }
+                    
+                    if (isset($financeAvailable) && $financeAvailable) {
+                        render_metric('Outstanding Fees', '₦' . number_format((float)$feeBalance), null, $feeBalance > 0 ? 'school-red' : 'sage', url('student/fees.php'));
+                        render_metric('Pending Verification', '₦' . number_format((float)$totalPending), null, $totalPending > 0 ? 'school-gold' : 'slate-gray', url('student/fees.php'));
+                    } else {
+                        render_metric('Outstanding Fees', 'Error', 'Data unavailable', 'school-red');
+                    }
+                    
+                    render_metric('Unread Notifications', $unreadNotifs, null, 'school-navy', url('notifications.php'));
+                    ?>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                    <!-- Main Column -->
+                    <div class="lg:col-span-2 space-y-8">
+                        
+                        <!-- Academic Snapshot -->
+                        <div class="bg-paper rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                                <h3 class="text-sm font-bold text-school-navy uppercase tracking-wider">Academic Snapshot</h3>
+                            </div>
+                            <div class="p-6">
+                                <div class="flex items-center space-x-4 mb-6">
+                                    <div class="w-12 h-12 bg-blue-50 text-school-blue rounded-full flex items-center justify-center font-bold text-xl">
+                                        <?= e($currentClass['level'] ?? '?') ?>
+                                    </div>
+                                    <div>
+                                        <p class="text-lg font-bold text-school-navy"><?= e($currentClass['name'] ?? 'No Class Assigned') ?></p>
+                                        <p class="text-sm text-slate-gray">Session: <?= e($activeSession['name'] ?? 'N/A') ?> &bull; <?= e($term) ?></p>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-gray-100 pt-6">
+                                    <a href="<?= url('student/results.php') ?>" class="block p-4 bg-gray-50 hover:bg-ivory border border-gray-200 rounded-lg text-center transition-colors">
+                                        <p class="text-sm font-bold text-school-navy">My Results</p>
+                                        <p class="text-xs text-slate-gray mt-1">View latest report cards</p>
+                                    </a>
+                                    <a href="<?= url('student/attendance.php') ?>" class="block p-4 bg-gray-50 hover:bg-ivory border border-gray-200 rounded-lg text-center transition-colors">
+                                        <p class="text-sm font-bold text-school-navy">My Attendance</p>
+                                        <p class="text-xs text-slate-gray mt-1">View daily records</p>
+                                    </a>
+                                    <?php if (isset($financeAvailable) && $financeAvailable): ?>
+                                    <a href="<?= url('student/fees.php') ?>" class="block p-4 bg-gray-50 hover:bg-ivory border border-gray-200 rounded-lg text-center transition-colors">
+                                        <p class="text-sm font-bold text-school-navy">View Fees & Payments</p>
+                                        <p class="text-xs text-slate-gray mt-1">Manage school fees</p>
+                                    </a>
+                                    <a href="<?= url('student/fees.php#submit-proof') ?>" class="block p-4 bg-gray-50 hover:bg-ivory border border-gray-200 rounded-lg text-center transition-colors">
+                                        <p class="text-sm font-bold text-school-navy">Submit Payment Proof</p>
+                                        <p class="text-xs text-slate-gray mt-1">Upload bank transfer</p>
+                                    </a>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    
+                    <!-- Secondary Column -->
+                    <div class="lg:col-span-1 space-y-8">
+                        <!-- Notifications -->
+                        <?php require __DIR__ . '/../templates/components/dashboard/notifications_widget.php'; ?>
+                        
+                        <!-- Announcements -->
+                        <?php 
+                            $announcementsAudience = 'STUDENTS';
+                            require __DIR__ . '/../templates/components/announcements_widget.php'; 
+                        ?>
+                    </div>
+                </div>
+
+            <?php endif; ?>
         </main>
     </div>
 </div>
 <?php require __DIR__ . '/../templates/layouts/app-footer.php'; ?>
+

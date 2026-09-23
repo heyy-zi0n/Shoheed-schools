@@ -24,14 +24,23 @@ CREATE TABLE users (
 -- 3. Staff
 CREATE TABLE staff (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL UNIQUE,
+    user_id INT NULL UNIQUE,
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
+    staff_category ENUM('TEACHING', 'NON_TEACHING') NULL DEFAULT NULL,
+    public_designation VARCHAR(150) NULL,
+    short_bio TEXT NULL,
+    qualification VARCHAR(255) NULL,
+    public_email VARCHAR(150) NULL,
+    public_phone VARCHAR(50) NULL,
+    show_in_directory TINYINT(1) NOT NULL DEFAULT 0,
+    display_order INT NOT NULL DEFAULT 100,
     phone VARCHAR(20) NULL,
     address TEXT NULL,
     profile_image VARCHAR(255) NULL,
     can_teach_subjects TINYINT(1) NOT NULL DEFAULT 0,
     can_be_class_teacher TINYINT(1) NOT NULL DEFAULT 0,
+    status ENUM('ACTIVE', 'INACTIVE') DEFAULT 'ACTIVE',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -342,3 +351,45 @@ CREATE TABLE system_settings (
     setting_value TEXT NULL,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
+CREATE TABLE `school_bank_accounts` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `bank_name` varchar(100) NOT NULL,
+  `account_name` varchar(150) NOT NULL,
+  `account_number` varchar(50) NOT NULL,
+  `is_active` tinyint(1) DEFAULT 1,
+  `display_order` int(11) DEFAULT 0,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `payment_submissions` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `student_id` int(11) NOT NULL,
+  `invoice_id` int(11) NOT NULL,
+  `amount` decimal(10,2) NOT NULL,
+  `payment_date` date NOT NULL,
+  `sender_bank` varchar(100) NOT NULL,
+  `transfer_reference` varchar(100) DEFAULT NULL,
+  `proof_path` varchar(255) NOT NULL,
+  `note` text,
+  `status` enum('PENDING','VERIFIED','REJECTED') DEFAULT 'PENDING',
+  `submitted_at` datetime DEFAULT current_timestamp(),
+  `reviewed_at` datetime DEFAULT NULL,
+  `reviewed_by` int(11) DEFAULT NULL,
+  `review_note` text,
+  `verified_payment_id` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `student_id` (`student_id`),
+  KEY `invoice_id` (`invoice_id`),
+  KEY `reviewed_by` (`reviewed_by`),
+  KEY `verified_payment_id` (`verified_payment_id`),
+  CONSTRAINT `fk_pay_sub_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`),
+  CONSTRAINT `fk_pay_sub_invoice` FOREIGN KEY (`invoice_id`) REFERENCES `student_invoices` (`id`),
+  CONSTRAINT `fk_pay_sub_reviewer` FOREIGN KEY (`reviewed_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_pay_sub_payment` FOREIGN KEY (`verified_payment_id`) REFERENCES `payments` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+UPDATE users
+SET status = 'INACTIVE'
+WHERE role_id = (SELECT id FROM roles WHERE name = 'ROLE_PARENT');

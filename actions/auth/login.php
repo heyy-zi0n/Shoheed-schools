@@ -33,6 +33,11 @@ try {
             redirect('login.php');
         }
 
+        if ($user['role_name'] === ROLE_PARENT) {
+            set_flash('error', "Parent/Guardian portal access is no longer available. Please use the student's portal account for academic and fee information.");
+            redirect('login.php');
+        }
+
         login_user($user['id'], $user['role_name']);
         
         $updateStmt = $pdo->prepare("UPDATE users SET last_login_at = NOW() WHERE id = :id");
@@ -50,14 +55,8 @@ try {
         ]);
 
         $role = $user['role_name'];
-        if ($role === ROLE_ADMIN) redirect('admin/dashboard.php');
-        if ($role === ROLE_PRINCIPAL) redirect('principal/dashboard.php');
-        if (in_array($role, [ROLE_CLASS_TEACHER, ROLE_SUBJECT_TEACHER], true)) redirect('teacher/dashboard.php');
-        if ($role === ROLE_BURSAR) redirect('bursar/dashboard.php');
-        if ($role === ROLE_STUDENT) redirect('student/dashboard.php');
-        if ($role === ROLE_PARENT) redirect('parent/dashboard.php');
-        
-        redirect('index.php');
+        header('Location: ' . get_dashboard_url_for_role($role));
+        exit;
     } else {
         set_flash('error', 'Invalid username or password.');
         redirect('login.php');
