@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require_once __DIR__ . '/../../config/bootstrap.php';
 
 require_role([ROLE_BURSAR]);
@@ -65,7 +65,7 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                                     <?php endif; ?>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">
-                                    &#8358;<?= number_format((float)$payment['amount'], 2) ?>
+                                    ₦<?= number_format((float)$payment['amount'], 2) ?>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -83,3 +83,4 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
     </div>
 </div>
 <?php require __DIR__ . '/../../templates/layouts/app-footer.php'; ?>
+

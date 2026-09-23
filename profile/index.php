@@ -20,14 +20,23 @@ if (in_array($userRole, ['ROLE_ADMIN', 'ROLE_PRINCIPAL', 'ROLE_CLASS_TEACHER', '
     $entity = $stmt->fetch();
     if ($entity) {
         $staffId = $entity['id'];
-        $phone = $entity['phone'];
-        $email = $entity['email'];
-        $profileImage = $entity['profile_image'];
-        $shortBio = $entity['short_bio'];
+        $phone = $entity['phone'] ?? null;
+        $email = $entity['email'] ?? null;
+        $profileImage = $entity['profile_image'] ?? null;
+        $shortBio = $entity['short_bio'] ?? null;
         $isStaff = true;
+    } else {
+        $staffId = null;
+        $phone = null;
+        $email = null;
+        $profileImage = null;
+        $shortBio = null;
+        $isStaff = false;
     }
 } elseif ($userRole === 'ROLE_STUDENT') {
     // students might not have email/phone, or maybe they do?
+    $phone = null;
+    $email = null;
 }
 
 require __DIR__ . '/../templates/layouts/app-header.php';

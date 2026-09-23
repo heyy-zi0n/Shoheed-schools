@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require_once __DIR__ . '/../config/bootstrap.php';
 
 require_role([ROLE_BURSAR]);
@@ -67,8 +67,8 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                 <?php 
                 if ($financeAvailable) {
                     render_metric('Total Invoices', $totalInvoices, null, 'school-blue', url('bursar/invoices/index.php'));
-                    render_metric('Outstanding Amount', '&#8358;' . number_format((float)$outstandingAmount), null, 'school-red', url('bursar/invoices/index.php?status=outstanding'));
-                    render_metric('Amount Collected', '&#8358;' . number_format((float)$amountCollected), null, 'sage', url('bursar/payments/index.php'));
+                    render_metric('Outstanding Amount', '₦' . number_format((float)$outstandingAmount), null, 'school-red', url('bursar/invoices/index.php?status=outstanding'));
+                    render_metric('Amount Collected', '₦' . number_format((float)$amountCollected), null, 'sage', url('bursar/payments/index.php'));
                     render_metric('Pending Verification', $pendingVerifications, null, $pendingVerifications > 0 ? 'school-gold' : 'slate-gray', url('bursar/payments/submissions.php'));
                 } else {
                     render_metric('Total Invoices', 'Error', 'Data unavailable', 'school-blue');
@@ -95,7 +95,7 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                             <?php 
                             if ($financeAvailable) {
                                 render_quick_action('Manage Invoices', url('bursar/invoices/index.php'), 'I', 'school-navy');
-                                render_quick_action('Record Payment', url('bursar/payments/create.php'), '₦', 'sage');
+                                render_quick_action('Record Payment', url('bursar/payments/create.php'), 'â‚¦', 'sage');
                                 render_quick_action('Review Transfers', url('bursar/payments/submissions.php'), 'T', 'school-gold');
                             }
                             
@@ -132,7 +132,7 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                                                 </p>
                                             </div>
                                             <div class="text-right">
-                                                <p class="font-bold text-sage text-sm">₦<?= number_format($payment['amount']) ?></p>
+                                                <p class="font-bold text-sage text-sm">â‚¦<?= number_format($payment['amount']) ?></p>
                                                 <p class="text-[10px] text-gray-400 uppercase tracking-wider mt-1"><?= e($payment['payment_method']) ?></p>
                                             </div>
                                         </div>
@@ -160,4 +160,5 @@ require __DIR__ . '/../templates/layouts/app-header.php';
     </div>
 </div>
 <?php require __DIR__ . '/../templates/layouts/app-footer.php'; ?>
+
 

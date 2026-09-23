@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require_once __DIR__ . '/../config/bootstrap.php';
 
 require_role([ROLE_STUDENT]);
@@ -91,7 +91,7 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                                     <p class="text-xs text-slate-gray">Session: <?= e($receipt['session_name']) ?></p>
                                 </td>
                                 <td class="py-4 text-right">
-                                    <p class="font-bold text-charcoal">&#8358;<?= number_format($receipt['amount'], 2) ?></p>
+                                    <p class="font-bold text-charcoal">₦<?= number_format($receipt['amount'], 2) ?></p>
                                 </td>
                             </tr>
                         </tbody>
@@ -113,7 +113,7 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                         <?php endif; ?>
                         <div class="flex justify-between bg-gray-50 px-4 py-3 border border-gray-200 mt-4 rounded">
                             <span class="text-sm text-school-navy font-bold uppercase tracking-wider">Total Paid</span>
-                            <span class="text-lg text-sage font-bold">&#8358;<?= number_format($receipt['amount'], 2) ?></span>
+                            <span class="text-lg text-sage font-bold">₦<?= number_format($receipt['amount'], 2) ?></span>
                         </div>
                     </div>
                 </div>
@@ -132,3 +132,4 @@ require __DIR__ . '/../templates/layouts/app-header.php';
     </div>
 </div>
 <?php require __DIR__ . '/../templates/layouts/app-footer.php'; ?>
+

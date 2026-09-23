@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require_once __DIR__ . '/../../config/bootstrap.php';
 
 require_role([ROLE_BURSAR]);
@@ -62,15 +62,15 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                         <div class="mt-6 pt-6 border-t border-gray-700">
                             <div class="flex justify-between mb-2 text-sm">
                                 <span class="text-gray-300">Total Invoice:</span>
-                                <span>&#8358;<?= number_format($total, 2) ?></span>
+                                <span>₦<?= number_format($total, 2) ?></span>
                             </div>
                             <div class="flex justify-between mb-2 text-sm">
                                 <span class="text-gray-300">Amount Paid:</span>
-                                <span class="text-green-400">&#8358;<?= number_format($paid, 2) ?></span>
+                                <span class="text-green-400">₦<?= number_format($paid, 2) ?></span>
                             </div>
                             <div class="flex justify-between mt-4 pt-4 border-t border-gray-700 font-bold text-lg">
                                 <span class="text-school-gold">Balance Due:</span>
-                                <span>&#8358;<?= number_format($balance, 2) ?></span>
+                                <span>₦<?= number_format($balance, 2) ?></span>
                             </div>
                         </div>
                     </div>
@@ -90,7 +90,7 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                             
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label for="amount" class="block text-sm font-medium text-charcoal">Payment Amount (&#8358;) *</label>
+                                    <label for="amount" class="block text-sm font-medium text-charcoal">Payment Amount (₦) *</label>
                                     <input type="number" step="0.01" max="<?= $balance ?>" name="amount" id="amount" value="<?= $balance ?>" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-school-blue focus:border-school-blue sm:text-sm font-bold text-school-navy">
                                 </div>
                                 <div>
@@ -131,3 +131,4 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
     </div>
 </div>
 <?php require __DIR__ . '/../../templates/layouts/app-footer.php'; ?>
+

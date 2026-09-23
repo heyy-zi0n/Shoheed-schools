@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require_once __DIR__ . '/../../config/bootstrap.php';
 
 require_role([ROLE_BURSAR]);
@@ -75,7 +75,7 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                             </div>
                             <div>
                                 <p class="text-slate-gray">Outstanding Balance</p>
-                                <p class="font-bold <?= $outstanding > 0 ? 'text-school-red' : 'text-sage' ?>">&#8358;<?= number_format($outstanding, 2) ?></p>
+                                <p class="font-bold <?= $outstanding > 0 ? 'text-school-red' : 'text-sage' ?>">₦<?= number_format($outstanding, 2) ?></p>
                             </div>
                         </div>
                     </div>
@@ -85,7 +85,7 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                         <div class="grid grid-cols-2 gap-4 text-sm">
                             <div>
                                 <p class="text-slate-gray">Amount</p>
-                                <p class="text-xl font-bold text-school-navy">&#8358;<?= number_format($sub['amount'], 2) ?></p>
+                                <p class="text-xl font-bold text-school-navy">₦<?= number_format($sub['amount'], 2) ?></p>
                             </div>
                             <div>
                                 <p class="text-slate-gray">Payment Date</p>
@@ -113,7 +113,7 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                         
                         <?php if ($sub['amount'] > $outstanding): ?>
                             <div class="bg-red-50 border border-red-200 text-red-800 p-4 rounded mb-4 text-sm">
-                                <strong>Warning:</strong> The claimed amount (&#8358;<?= number_format($sub['amount'], 2) ?>) is greater than the current outstanding balance (&#8358;<?= number_format($outstanding, 2) ?>). 
+                                <strong>Warning:</strong> The claimed amount (₦<?= number_format($sub['amount'], 2) ?>) is greater than the current outstanding balance (₦<?= number_format($outstanding, 2) ?>). 
                                 You cannot verify an amount larger than the outstanding balance.
                             </div>
                         <?php endif; ?>
@@ -178,3 +178,4 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
 </div>
 
 <?php require __DIR__ . '/../../templates/layouts/app-footer.php'; ?>
+

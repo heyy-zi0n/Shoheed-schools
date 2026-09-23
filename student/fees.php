@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require_once __DIR__ . '/../config/bootstrap.php';
 
 require_role([ROLE_STUDENT]);
@@ -94,19 +94,19 @@ require __DIR__ . '/../templates/layouts/app-header.php';
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <div class="bg-paper p-6 rounded-lg shadow-sm border border-gray-100 border-t-4 border-t-school-navy">
                     <p class="text-sm font-semibold text-slate-gray uppercase tracking-wider mb-1">Total Fees</p>
-                    <p class="text-2xl font-bold text-school-navy">&#8358;<?= number_format($totalFees, 2) ?></p>
+                    <p class="text-2xl font-bold text-school-navy">₦<?= number_format($totalFees, 2) ?></p>
                 </div>
                 <div class="bg-paper p-6 rounded-lg shadow-sm border border-gray-100 border-t-4 border-t-sage">
                     <p class="text-sm font-semibold text-slate-gray uppercase tracking-wider mb-1">Amount Paid</p>
-                    <p class="text-2xl font-bold text-sage">&#8358;<?= number_format($totalPaid, 2) ?></p>
+                    <p class="text-2xl font-bold text-sage">₦<?= number_format($totalPaid, 2) ?></p>
                 </div>
                 <div class="bg-paper p-6 rounded-lg shadow-sm border border-gray-100 border-t-4 <?= $outstandingBalance > 0 ? 'border-t-school-red' : 'border-t-sage' ?>">
                     <p class="text-sm font-semibold text-slate-gray uppercase tracking-wider mb-1">Outstanding Balance</p>
-                    <p class="text-2xl font-bold <?= $outstandingBalance > 0 ? 'text-school-red' : 'text-sage' ?>">&#8358;<?= number_format($outstandingBalance, 2) ?></p>
+                    <p class="text-2xl font-bold <?= $outstandingBalance > 0 ? 'text-school-red' : 'text-sage' ?>">₦<?= number_format($outstandingBalance, 2) ?></p>
                 </div>
                 <div class="bg-paper p-6 rounded-lg shadow-sm border border-gray-100 border-t-4 border-t-school-gold">
                     <p class="text-sm font-semibold text-slate-gray uppercase tracking-wider mb-1">Pending Verification</p>
-                    <p class="text-2xl font-bold text-school-gold">&#8358;<?= number_format($totalPending, 2) ?></p>
+                    <p class="text-2xl font-bold text-school-gold">₦<?= number_format($totalPending, 2) ?></p>
                 </div>
             </div>
 
@@ -129,11 +129,11 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                                                     <p class="font-bold text-school-navy"><?= e($inv['term_name']) ?> School Fees</p>
                                                     <p class="text-xs text-slate-gray">Session: <?= e($inv['session_name']) ?></p>
                                                 </div>
-                                                <span class="text-school-red font-bold">&#8358;<?= number_format($inv['total_amount'] - $inv['amount_paid'], 2) ?></span>
+                                                <span class="text-school-red font-bold">₦<?= number_format($inv['total_amount'] - $inv['amount_paid'], 2) ?></span>
                                             </div>
                                             <div class="flex justify-between text-xs text-slate-gray">
-                                                <span>Total: &#8358;<?= number_format($inv['total_amount'], 2) ?></span>
-                                                <span>Paid: &#8358;<?= number_format($inv['amount_paid'], 2) ?></span>
+                                                <span>Total: ₦<?= number_format($inv['total_amount'], 2) ?></span>
+                                                <span>Paid: ₦<?= number_format($inv['amount_paid'], 2) ?></span>
                                             </div>
                                         </div>
                                     <?php endforeach; ?>
@@ -206,14 +206,14 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                                         <select name="invoice_id" id="invoice_id" required class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-school-blue focus:border-school-blue sm:text-sm">
                                             <option value="">-- Select Invoice --</option>
                                             <?php foreach ($outstandingInvoices as $inv): ?>
-                                                <option value="<?= $inv['id'] ?>"><?= e($inv['term_name']) ?> School Fees (Outstanding: &#8358;<?= number_format($inv['total_amount'] - $inv['amount_paid'], 2) ?>)</option>
+                                                <option value="<?= $inv['id'] ?>"><?= e($inv['term_name']) ?> School Fees (Outstanding: ₦<?= number_format($inv['total_amount'] - $inv['amount_paid'], 2) ?>)</option>
                                             <?php endforeach; ?>
                                         </select>
                                     </div>
                                     
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                            <label for="amount" class="block text-sm font-medium text-charcoal mb-1">Amount Paid (&#8358;) *</label>
+                                            <label for="amount" class="block text-sm font-medium text-charcoal mb-1">Amount Paid (₦) *</label>
                                             <input type="number" step="0.01" name="amount" id="amount" required class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-school-blue focus:border-school-blue sm:text-sm">
                                         </div>
                                         <div>
@@ -282,7 +282,7 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                                         <?= e($sub['term_name']) ?> Fees
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-charcoal">
-                                        &#8358;<?= number_format($sub['amount'], 2) ?>
+                                        ₦<?= number_format($sub['amount'], 2) ?>
                                     </td>
                                     <td class="px-6 py-4 text-sm">
                                         <?php if ($sub['status'] === 'PENDING'): ?>
@@ -339,7 +339,7 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                                             <?= e($pay['term_name']) ?> Fees
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-sage">
-                                            &#8358;<?= number_format($pay['amount'], 2) ?>
+                                            ₦<?= number_format($pay['amount'], 2) ?>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-charcoal">
                                             <?= e($pay['payment_method']) ?>
@@ -381,3 +381,4 @@ function copyAccount(number, btn) {
 }
 </script>
 <?php require __DIR__ . '/../templates/layouts/app-footer.php'; ?>
+

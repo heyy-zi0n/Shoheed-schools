@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require_once __DIR__ . '/../../config/bootstrap.php';
 
 require_role([ROLE_BURSAR]);
@@ -66,7 +66,7 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                                             <?= e($sub['term_name']) ?>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-school-gold">
-                                            &#8358;<?= number_format($sub['amount'], 2) ?>
+                                            ₦<?= number_format($sub['amount'], 2) ?>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
                                             <a href="<?= url('bursar/payments/review.php?id=' . $sub['id']) ?>" class="inline-flex items-center px-3 py-1 border border-school-blue text-school-blue hover:bg-school-blue hover:text-white rounded text-xs font-bold transition-colors">Review</a>
@@ -83,3 +83,4 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
     </div>
 </div>
 <?php require __DIR__ . '/../../templates/layouts/app-footer.php'; ?>
+

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require_once __DIR__ . '/../../config/bootstrap.php';
 
 require_role([ROLE_ADMIN]);
@@ -81,15 +81,15 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div class="bg-paper p-6 rounded-lg shadow-sm border border-gray-100 border-l-4 border-l-school-blue">
                     <p class="text-xs font-bold text-slate-gray uppercase tracking-wider mb-1">Expected Revenue</p>
-                    <p class="text-3xl font-serif font-bold text-school-navy">&#8358;<?= number_format((float)$totalInvoices, 2) ?></p>
+                    <p class="text-3xl font-serif font-bold text-school-navy">₦<?= number_format((float)$totalInvoices, 2) ?></p>
                 </div>
                 <div class="bg-paper p-6 rounded-lg shadow-sm border border-gray-100 border-l-4 border-l-sage">
                     <p class="text-xs font-bold text-slate-gray uppercase tracking-wider mb-1">Total Received</p>
-                    <p class="text-3xl font-serif font-bold text-green-600">&#8358;<?= number_format((float)$totalPayments, 2) ?></p>
+                    <p class="text-3xl font-serif font-bold text-green-600">₦<?= number_format((float)$totalPayments, 2) ?></p>
                 </div>
                 <div class="bg-paper p-6 rounded-lg shadow-sm border border-gray-100 border-l-4 border-l-school-red">
                     <p class="text-xs font-bold text-slate-gray uppercase tracking-wider mb-1">Outstanding</p>
-                    <p class="text-3xl font-serif font-bold text-red-600">&#8358;<?= number_format((float)$outstanding, 2) ?></p>
+                    <p class="text-3xl font-serif font-bold text-red-600">₦<?= number_format((float)$outstanding, 2) ?></p>
                 </div>
             </div>
             
@@ -101,3 +101,4 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
     </div>
 </div>
 <?php require __DIR__ . '/../../templates/layouts/app-footer.php'; ?>
+
