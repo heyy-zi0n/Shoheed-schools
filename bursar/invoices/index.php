@@ -19,9 +19,8 @@ if ($activeSession && $activeTerm) {
                (SELECT COUNT(*) FROM payment_submissions ps WHERE ps.invoice_id = si.id AND ps.status IN ('PENDING', 'VERIFIED')) as blocking_submissions_count
         FROM student_invoices si
         JOIN students s ON si.student_id = s.id
-        JOIN student_enrollments se ON s.id = se.student_id AND se.academic_session_id = si.academic_session_id
-        JOIN classes c ON se.class_id = c.id
         JOIN fee_structures fs ON si.fee_structure_id = fs.id
+        JOIN classes c ON fs.class_id = c.id
         WHERE si.academic_session_id = :session_id AND si.term_id = :term_id
         ORDER BY si.status ASC, s.last_name ASC
     ");
@@ -120,7 +119,7 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                                                 <span class="text-xs text-slate-gray cursor-help" title="Pending or verified transfer exists">Blocked (Transfer)</span>
                                             <?php else: ?>
                                                 <form action="<?= url('actions/invoices/refresh.php') ?>" method="POST" class="inline" onsubmit="return confirm('Refresh this invoice from the latest Fee Structure?\n\nCurrent invoice: ₦<?= number_format($total, 2) ?>\nCurrent Fee Structure: ₦<?= number_format($invoice['fee_structure_total'], 2) ?>\n\nThis will replace the invoice items only if no payment activity exists.');">
-                                                    <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+                                                    <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
                                                     <input type="hidden" name="invoice_id" value="<?= $invoice['id'] ?>">
                                                     <button type="submit" class="text-xs <?= $outOfSync ? 'text-amber-600 font-bold hover:text-amber-800' : 'text-slate-gray hover:text-charcoal' ?>">
                                                         Refresh <?= $outOfSync ? '(Out of Sync)' : '' ?>

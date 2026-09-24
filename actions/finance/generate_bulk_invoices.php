@@ -160,7 +160,7 @@ try {
 
     $pdo->commit();
 
-    $msg = "Standard invoices created: {$created_standard}<br>Supplementary invoices created: {$created_supplementary}<br>Already fully invoiced: {$skipped}<br>Failed: {$failed}";
+    $msg = "Standard invoices created: {$created_standard}\nSupplementary invoices created: {$created_supplementary}\nAlready fully invoiced: {$skipped}\nFailed: {$failed}";
     set_flash('success', $msg);
     redirect('admin/finance/generate_invoices.php');
 

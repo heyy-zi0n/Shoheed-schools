@@ -23,6 +23,24 @@ if (!empty($errors)) {
 
 try {
     $pdo = get_db_connection();
+
+    // Probabilistic Garbage Collection for stale rate limits (1% chance)
+    if (random_int(1, 100) === 1) {
+        $pdo->exec("DELETE FROM login_attempts WHERE last_failed_at < DATE_SUB(NOW(), INTERVAL 24 HOUR)");
+    }
+
+    // Rate Limiting (Database Persistent)
+    $lockStmt = $pdo->prepare("SELECT failed_attempts, locked_until FROM login_attempts WHERE username = :uname");
+    $lockStmt->execute(['uname' => $username]);
+    $attemptRecord = $lockStmt->fetch();
+
+    if ($attemptRecord && $attemptRecord['locked_until']) {
+        if (strtotime($attemptRecord['locked_until']) > time()) {
+            set_flash('error', 'Too many unsuccessful login attempts. Please try again later.');
+            redirect('login.php');
+        }
+    }
+
     $stmt = $pdo->prepare("SELECT u.*, r.name as role_name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.username = :username LIMIT 1");
     $stmt->execute(['username' => $username]);
     $user = $stmt->fetch();
@@ -39,7 +57,9 @@ try {
         }
 
         login_user($user['id'], $user['role_name']);
-        
+
+        $pdo->prepare("DELETE FROM login_attempts WHERE username = :uname")->execute(['uname' => $username]);
+
         $updateStmt = $pdo->prepare("UPDATE users SET last_login_at = NOW() WHERE id = :id");
         $updateStmt->execute(['id' => $user['id']]);
 
@@ -58,7 +78,19 @@ try {
         header('Location: ' . get_dashboard_url_for_role($role));
         exit;
     } else {
-        set_flash('error', 'Invalid username or password.');
+        $ip = $_SERVER['REMOTE_ADDR'] ?? null;
+        $failStmt = $pdo->prepare("
+            INSERT INTO login_attempts (username, ip_address, failed_attempts, last_failed_at)
+            VALUES (:uname, :ip, 1, NOW())
+            ON DUPLICATE KEY UPDATE
+                ip_address = VALUES(ip_address),
+                failed_attempts = failed_attempts + 1,
+                last_failed_at = NOW(),
+                locked_until = IF(failed_attempts >= 5, DATE_ADD(NOW(), INTERVAL 5 MINUTE), locked_until)
+        ");
+        $failStmt->execute(['uname' => $username, 'ip' => $ip]);
+
+        set_flash('error', 'Invalid login credentials.');
         redirect('login.php');
     }
 } catch (PDOException $e) {

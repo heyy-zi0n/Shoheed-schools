@@ -31,7 +31,7 @@ require __DIR__ . '/templates/layouts/app-header.php';
             <?= csrf_field() ?>
             <div class="space-y-4">
                 <div>
-                    <label for="username" class="block text-sm font-medium text-charcoal">Username</label>
+                    <label for="username" class="block text-sm font-medium text-charcoal">Username / Admission Number</label>
                     <input id="username" name="username" type="text" required class="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-charcoal rounded-md focus:outline-none focus:ring-school-blue focus:border-school-blue focus:z-10 sm:text-sm mt-1">
                 </div>
                 <div>

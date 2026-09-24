@@ -46,6 +46,7 @@
             <div class="px-6 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Student Area</div>
             <a href="<?= url('student/dashboard.php') ?>" class="block px-6 py-2 text-sm text-gray-300 hover:text-white hover:bg-school-blue transition-colors">Dashboard</a>
             <a href="<?= url('student/results.php') ?>" class="block px-6 py-2 text-sm text-gray-300 hover:text-white hover:bg-school-blue transition-colors">My Results</a>
+            <a href="<?= url('student/profile.php') ?>" class="block px-6 py-2 text-sm text-gray-300 hover:text-white hover:bg-school-blue transition-colors">Profile & Security</a>
         <?php endif; ?>
 
         <?php 

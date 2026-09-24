@@ -15,11 +15,14 @@ $stmt = $pdo->prepare("
     SELECT s.*,
            c.name AS current_class,
            se.academic_session_id AS session_id,
-           sess.name AS session_name
+           sess.name AS session_name,
+           u.username as portal_username,
+           u.status as portal_status
     FROM students s
     LEFT JOIN student_enrollments se ON se.student_id = s.id AND se.status = 'ACTIVE'
     LEFT JOIN classes c ON c.id = se.class_id
     LEFT JOIN academic_sessions sess ON sess.id = se.academic_session_id
+    LEFT JOIN users u ON s.user_id = u.id
     WHERE s.id = ?
 ");
 $stmt->execute([$studentId]);
@@ -101,6 +104,36 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                             <div><dt class="text-slate-gray">Current Class</dt><dd class="font-medium text-charcoal"><?= e($student['current_class'] ?? 'Not Enrolled') ?></dd></div>
                             <div><dt class="text-slate-gray">Session</dt><dd class="font-medium text-charcoal"><?= e($student['session_name'] ?? '—') ?></dd></div>
                         </dl>
+                    </div>
+
+                    <!-- Portal Access -->
+                    <div class="bg-paper rounded-lg shadow-sm border border-gray-100 p-6">
+                        <h3 class="text-sm font-bold text-slate-gray uppercase tracking-wider mb-4">Portal Access</h3>
+                        <?php if ($student['user_id'] === null): ?>
+                            <dl class="grid grid-cols-2 gap-4 text-sm mb-4">
+                                <div><dt class="text-slate-gray">Username</dt><dd class="font-medium text-charcoal"><?= e($student['admission_number']) ?></dd></div>
+                                <div><dt class="text-slate-gray">Account Status</dt><dd class="font-medium text-amber-700">NO PORTAL ACCOUNT</dd></div>
+                            </dl>
+                            <form action="<?= url('actions/students/generate_login_slip.php') ?>" method="POST" class="inline">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="student_id" value="<?= (int)$student['id'] ?>">
+                                <button type="submit" class="bg-school-blue text-white px-4 py-2 rounded text-sm font-medium hover:bg-school-navy transition-colors">
+                                    Create Portal Account & Generate Login Slip
+                                </button>
+                            </form>
+                        <?php else: ?>
+                            <dl class="grid grid-cols-2 gap-4 text-sm mb-4">
+                                <div><dt class="text-slate-gray">Username</dt><dd class="font-medium text-charcoal"><?= e($student['portal_username']) ?></dd></div>
+                                <div><dt class="text-slate-gray">Account Status</dt><dd class="font-medium text-charcoal"><?= e($student['portal_status']) ?></dd></div>
+                            </dl>
+                            <form action="<?= url('actions/students/generate_login_slip.php') ?>" method="POST" class="inline" onsubmit="return confirm('Generate a new Student login slip?\n\nThis will create a new six-digit PIN.\nThe Student\'s previous PIN will stop working immediately.');">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="student_id" value="<?= (int)$student['id'] ?>">
+                                <button type="submit" class="border border-school-blue text-school-blue px-4 py-2 rounded text-sm font-medium hover:bg-blue-50 transition-colors">
+                                    Generate New Login Slip
+                                </button>
+                            </form>
+                        <?php endif; ?>
                     </div>
 
                     <!-- Guardians -->

@@ -15,7 +15,7 @@ foreach ($flashes as $flash):
     
     $dismissAttr = $isAutoDismiss ? 'data-auto-dismiss="true"' : '';
 ?>
-<div class="flash-message p-4 mb-4 text-sm rounded-lg border <?= $bgClass ?>" role="alert" <?= $dismissAttr ?>>
+<div class="flash-message p-4 mb-4 text-sm rounded-lg border whitespace-pre-line <?= $bgClass ?>" role="alert" <?= $dismissAttr ?>>
     <?= e($flash['message']) ?>
 </div>
 <?php endforeach; ?>

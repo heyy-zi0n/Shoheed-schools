@@ -154,7 +154,7 @@ require_once dirname(__DIR__) . '/core/url.php';        // url(), redirect()
 require_once dirname(__DIR__) . '/core/flash.php';      // set_flash(), get_flash()
 
 // ─── 6. CSRF ──────────────────────────────────────────────────────────────────
-require_once dirname(__DIR__) . '/core/csrf.php';       // csrf_field(), csrf_token(), verify_csrf_token()
+require_once dirname(__DIR__) . '/core/csrf.php';       // csrf_field(), generate_csrf_token(), verify_csrf_token()
 
 // ─── 7. Database ──────────────────────────────────────────────────────────────
 require_once dirname(__DIR__) . '/core/db.php';         // get_db_connection()
