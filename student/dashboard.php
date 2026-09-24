@@ -14,7 +14,9 @@ $student = $stmt->fetch();
 
 $activeSession = get_active_academic_session();
 $sessionId = $activeSession['id'] ?? null;
-$term = $pdo->query("SELECT name FROM terms WHERE is_active = 1 LIMIT 1")->fetchColumn() ?: 'Current Term';
+$activeSession = get_active_academic_session();
+$activeTerm = $activeSession ? get_active_term($activeSession['id']) : null;
+$term = $activeTerm ? $activeTerm['name'] : 'Current Term';
 
 $currentClass = null;
 $publishedResults = 0;

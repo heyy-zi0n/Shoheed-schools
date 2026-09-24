@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../../config/bootstrap.php';
 
-require_role([ROLE_ADMIN, ROLE_BURSAR]);
+require_role([ROLE_BURSAR]);
 
 $pdo = get_db_connection();
 
@@ -26,10 +26,10 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
             <div class="max-w-4xl mx-auto">
                 <div class="bg-paper rounded-lg shadow-sm border border-gray-100 p-8">
                     <h2 class="text-2xl font-serif font-bold text-school-navy mb-6">Create Fee Structure</h2>
-                    
+
                     <form action="<?= url('actions/finance/save_fee_structure.php') ?>" method="POST" id="fee-structure-form" data-confirm="Are you sure you want to create this fee structure?">
                         <?= csrf_field() ?>
-                        
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                             <div>
                                 <label class="block text-sm font-medium text-charcoal mb-1">Structure Name *</label>
@@ -37,7 +37,7 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-charcoal mb-1">Academic Session *</label>
-                                <select name="academic_session_id" required class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-school-blue focus:border-school-blue">
+                                <select name="academic_session_id" id="session-select" required class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-school-blue focus:border-school-blue">
                                     <option value="">Select Session...</option>
                                     <?php foreach ($sessions as $s): ?>
                                         <option value="<?= (int)$s['id'] ?>"><?= e($s['name']) ?></option>
@@ -46,11 +46,8 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-charcoal mb-1">Term *</label>
-                                <select name="term_id" required class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-school-blue focus:border-school-blue">
-                                    <option value="">Select Term...</option>
-                                    <?php foreach ($terms as $t): ?>
-                                        <option value="<?= (int)$t['id'] ?>"><?= e($t['name']) ?></option>
-                                    <?php endforeach; ?>
+                                <select name="term_id" id="term-select" required class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-school-blue focus:border-school-blue">
+                                    <option value="">Select Session First...</option>
                                 </select>
                             </div>
                             <div>
@@ -69,7 +66,7 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                                 <h3 class="text-lg font-serif font-bold text-school-navy">Fee Items</h3>
                                 <button type="button" id="add-item-btn" class="text-sm bg-gray-100 hover:bg-gray-200 text-charcoal px-3 py-1 rounded font-medium transition-colors">+ Add Item</button>
                             </div>
-                            
+
                             <div id="fee-items-container" class="space-y-3">
                                 <!-- Initial Item Row -->
                                 <div class="fee-item-row flex gap-3 items-start">
@@ -87,7 +84,7 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                                     <button type="button" class="remove-item-btn text-red-500 hover:text-red-700 p-2 opacity-50 cursor-not-allowed" disabled>&times;</button>
                                 </div>
                             </div>
-                            
+
                             <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
                                 <span class="font-bold text-slate-gray">Total Amount:</span>
                                 <span class="text-2xl font-bold text-school-navy">₦<span id="grand-total">0.00</span></span>
@@ -171,6 +168,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateTotal();
             }
         }
+    });
+
+    const sessionSelect = document.getElementById('session-select');
+    const termSelect = document.getElementById('term-select');
+
+    sessionSelect.addEventListener('change', function() {
+        const sessionId = this.value;
+        termSelect.innerHTML = '<option value="">Loading...</option>';
+
+        if (!sessionId) {
+            termSelect.innerHTML = '<option value="">Select Session First...</option>';
+            return;
+        }
+
+        fetch('<?= url('actions/academics/get_terms.php') ?>?session_id=' + sessionId)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    termSelect.innerHTML = '<option value="">Error loading terms</option>';
+                    return;
+                }
+
+                termSelect.innerHTML = '<option value="">Select Term...</option>';
+                data.terms.forEach(term => {
+                    const option = document.createElement('option');
+                    option.value = term.id;
+                    option.textContent = term.name;
+                    termSelect.appendChild(option);
+                });
+            })
+            .catch(() => {
+                termSelect.innerHTML = '<option value="">Error loading terms</option>';
+            });
     });
 });
 </script>

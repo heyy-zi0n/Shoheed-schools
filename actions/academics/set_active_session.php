@@ -22,14 +22,22 @@ if (!$sessionId) {
 try {
     $pdo = get_db_connection();
     $pdo->beginTransaction();
-    
+
     // Deactivate all
     $pdo->exec("UPDATE academic_sessions SET is_active = 0");
-    
+
     // Activate target
     $stmt = $pdo->prepare("UPDATE academic_sessions SET is_active = 1 WHERE id = :id");
     $stmt->execute(['id' => $sessionId]);
-    
+
+    // Check if session has an active term
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM terms WHERE academic_session_id = :id AND is_active = 1");
+    $stmt->execute(['id' => $sessionId]);
+    if ($stmt->fetchColumn() == 0) {
+        $stmt = $pdo->prepare("UPDATE terms SET is_active = 1 WHERE academic_session_id = :id AND name = 'First Term'");
+        $stmt->execute(['id' => $sessionId]);
+    }
+
     // Audit Log
     $auditStmt = $pdo->prepare("INSERT INTO audit_logs (user_id, action, entity_type, entity_id, description) VALUES (:user_id, :action, :type, :eid, :desc)");
     $auditStmt->execute([

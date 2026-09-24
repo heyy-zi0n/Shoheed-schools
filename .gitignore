@@ -116,3 +116,10 @@ Master-Prompt.md
 *.swp
 *.swo
 *~
+# Runtime uploads
+/storage/payment_proofs/*
+!/storage/payment_proofs/.gitkeep
+
+# Other protected runtime uploads where applicable
+/storage/profiles/*
+!/storage/profiles/.gitkeep

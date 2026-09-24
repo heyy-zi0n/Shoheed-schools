@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../config/bootstrap.php';
 
 require_role([ROLE_STUDENT]);
@@ -20,7 +20,8 @@ $stmt = $pdo->prepare("
     SELECT si.*,
            a.name as session_name, t.name as term_name,
            (SELECT COALESCE(SUM(p.amount), 0) FROM payments p WHERE p.student_invoice_id = si.id) as amount_paid,
-           (SELECT COALESCE(SUM(ps.amount), 0) FROM payment_submissions ps WHERE ps.invoice_id = si.id AND ps.status = 'PENDING') as amount_pending
+           (SELECT COALESCE(SUM(ps.amount), 0) FROM payment_submissions ps WHERE ps.invoice_id = si.id AND ps.status = 'PENDING') as amount_pending,
+           (SELECT GROUP_CONCAT(name SEPARATOR ', ') FROM invoice_items WHERE student_invoice_id = si.id) as item_names
     FROM student_invoices si
     JOIN academic_sessions a ON si.academic_session_id = a.id
     JOIN terms t ON si.term_id = t.id
@@ -34,13 +35,22 @@ $totalFees = 0;
 $totalPaid = 0;
 $totalPending = 0;
 $outstandingInvoices = [];
+$payableInvoices = [];
 
 foreach ($invoices as $inv) {
     $totalFees += $inv['total_amount'];
     $totalPaid += $inv['amount_paid'];
     $totalPending += $inv['amount_pending'];
-    if ($inv['total_amount'] - $inv['amount_paid'] > 0) {
+
+    $outstanding = $inv['total_amount'] - $inv['amount_paid'];
+    $availableToSubmit = $outstanding - $inv['amount_pending'];
+
+    if ($outstanding > 0 && $inv['status'] !== 'PAID') {
         $outstandingInvoices[] = $inv;
+
+        if ($availableToSubmit > 0) {
+            $payableInvoices[] = $inv;
+        }
     }
 }
 $outstandingBalance = max(0, $totalFees - $totalPaid);
@@ -81,15 +91,15 @@ require __DIR__ . '/../templates/layouts/app-header.php';
     <?php require __DIR__ . '/../templates/layouts/sidebar.php'; ?>
     <div class="flex-1 flex flex-col overflow-hidden">
         <?php require __DIR__ . '/../templates/layouts/topbar.php'; ?>
-        
+
         <main class="flex-1 overflow-x-hidden overflow-y-auto bg-ivory p-6">
             <?php require __DIR__ . '/../templates/components/alert.php'; ?>
-            
+
             <div class="mb-8">
                 <h1 class="text-2xl font-serif font-bold text-school-navy">My Fees & Payments</h1>
                 <p class="text-sm text-slate-gray">View fee summaries, submit payment proofs, and download receipts.</p>
             </div>
-            
+
             <!-- 1. Fee Summary -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <div class="bg-paper p-6 rounded-lg shadow-sm border border-gray-100 border-t-4 border-t-school-navy">
@@ -118,7 +128,9 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                             <h3 class="text-sm font-bold text-school-navy uppercase tracking-wider">Outstanding Invoices</h3>
                         </div>
                         <div class="p-6">
-                            <?php if (empty($outstandingInvoices)): ?>
+                            <?php if (empty($invoices)): ?>
+                                <p class="text-slate-gray font-medium">No invoices have been generated for you yet.</p>
+                            <?php elseif (empty($outstandingInvoices)): ?>
                                 <p class="text-sage font-medium">All invoices are fully paid.</p>
                             <?php else: ?>
                                 <div class="space-y-4">
@@ -126,8 +138,16 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                                         <div class="border border-gray-100 rounded-lg p-4 bg-gray-50">
                                             <div class="flex justify-between items-start mb-2">
                                                 <div>
-                                                    <p class="font-bold text-school-navy"><?= e($inv['term_name']) ?> School Fees</p>
-                                                    <p class="text-xs text-slate-gray">Session: <?= e($inv['session_name']) ?></p>
+                                                    <?php if ($inv['invoice_type'] === 'SUPPLEMENTARY'): ?>
+                                                        <p class="font-bold text-school-navy">
+                                                            <span class="text-amber-600 uppercase text-xs tracking-wider border border-amber-600 rounded px-1 mr-1">Supplementary</span>
+                                                            <?= e($inv['term_name']) ?> Additional Fees
+                                                        </p>
+                                                        <p class="text-[10px] text-slate-gray mt-0.5 truncate max-w-[200px]" title="<?= e($inv['item_names']) ?>">Items: <?= e($inv['item_names']) ?></p>
+                                                    <?php else: ?>
+                                                        <p class="font-bold text-school-navy"><?= e($inv['term_name']) ?> Standard Fees</p>
+                                                    <?php endif; ?>
+                                                    <p class="text-xs text-slate-gray mt-1">Session: <?= e($inv['session_name']) ?></p>
                                                 </div>
                                                 <span class="text-school-red font-bold">₦<?= number_format($inv['total_amount'] - $inv['amount_paid'], 2) ?></span>
                                             </div>
@@ -141,7 +161,7 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                             <?php endif; ?>
                         </div>
                     </div>
-                    
+
                     <!-- 3. School Bank Account Details -->
                     <div class="bg-paper rounded-lg shadow-sm border border-gray-100">
                         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
@@ -171,7 +191,7 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                                     </div>
                                 <?php endforeach; ?>
                             <?php endif; ?>
-                            
+
                             <!-- 4. Simple Payment Instructions -->
                             <div class="bg-gray-50 p-4 rounded-lg border border-gray-100 text-sm text-charcoal space-y-2 mt-6">
                                 <p class="font-bold mb-2">Instructions:</p>
@@ -187,7 +207,7 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                         </div>
                     </div>
                 </div>
-                
+
                 <div>
                     <!-- 5. Submit Payment Proof -->
                     <div id="submit-proof" class="bg-paper rounded-lg shadow-sm border border-gray-100 mb-8">
@@ -195,22 +215,27 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                             <h3 class="text-sm font-bold text-school-navy uppercase tracking-wider">Submit Payment Proof</h3>
                         </div>
                         <div class="p-6">
-                            <?php if (empty($outstandingInvoices)): ?>
-                                <p class="text-sage font-medium">You have no outstanding invoices to pay for.</p>
+                            <?php if (empty($payableInvoices)): ?>
+                                <p class="text-sage font-medium">You have no invoices eligible for payment submission at this time.</p>
                             <?php else: ?>
                                 <form action="<?= url('actions/payments/submit_proof.php') ?>" method="POST" enctype="multipart/form-data" class="space-y-4">
                                     <?= csrf_field() ?>
-                                    
+
                                     <div>
                                         <label for="invoice_id" class="block text-sm font-medium text-charcoal mb-1">Payment For (Select Invoice) *</label>
                                         <select name="invoice_id" id="invoice_id" required class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-school-blue focus:border-school-blue sm:text-sm">
                                             <option value="">-- Select Invoice --</option>
-                                            <?php foreach ($outstandingInvoices as $inv): ?>
-                                                <option value="<?= $inv['id'] ?>"><?= e($inv['term_name']) ?> School Fees (Outstanding: ₦<?= number_format($inv['total_amount'] - $inv['amount_paid'], 2) ?>)</option>
+                                            <?php foreach ($payableInvoices as $inv): ?>
+                                                <?php
+                                                    $title = $inv['invoice_type'] === 'SUPPLEMENTARY'
+                                                        ? "Supplementary Fees (" . substr($inv['item_names'], 0, 30) . (strlen($inv['item_names']) > 30 ? '...' : '') . ")"
+                                                        : "Standard School Fees";
+                                                ?>
+                                                <option value="<?= $inv['id'] ?>"><?= e($inv['term_name']) ?> <?= e($title) ?> (Outstanding: ₦<?= number_format($inv['total_amount'] - $inv['amount_paid'], 2) ?>)</option>
                                             <?php endforeach; ?>
                                         </select>
                                     </div>
-                                    
+
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
                                             <label for="amount" class="block text-sm font-medium text-charcoal mb-1">Amount Paid (₦) *</label>
@@ -221,7 +246,7 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                                             <input type="date" name="payment_date" id="payment_date" max="<?= date('Y-m-d') ?>" required class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-school-blue focus:border-school-blue sm:text-sm">
                                         </div>
                                     </div>
-                                    
+
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
                                             <label for="sender_bank" class="block text-sm font-medium text-charcoal mb-1">Sender Bank *</label>
@@ -232,18 +257,18 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                                             <input type="text" name="transfer_reference" id="transfer_reference" placeholder="Optional" class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-school-blue focus:border-school-blue sm:text-sm">
                                         </div>
                                     </div>
-                                    
+
                                     <div>
                                         <label for="proof" class="block text-sm font-medium text-charcoal mb-1">Proof of Payment (Image/PDF) *</label>
                                         <input type="file" name="proof" id="proof" accept="image/jpeg,image/png,application/pdf" required class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-school-blue focus:border-school-blue sm:text-sm">
                                         <p class="text-xs text-slate-gray mt-1">Max size: 5MB. Formats: JPG, PNG, PDF.</p>
                                     </div>
-                                    
+
                                     <div>
                                         <label for="note" class="block text-sm font-medium text-charcoal mb-1">Optional Note</label>
                                         <textarea name="note" id="note" rows="2" class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-school-blue focus:border-school-blue sm:text-sm"></textarea>
                                     </div>
-                                    
+
                                     <div class="pt-2">
                                         <button type="submit" class="w-full bg-school-blue text-white px-4 py-3 rounded-md font-bold hover:bg-school-navy transition-colors shadow-sm">
                                             Submit Payment Proof
@@ -358,7 +383,7 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                     </div>
                 <?php endif; ?>
             </div>
-            
+
         </main>
     </div>
 </div>

@@ -31,6 +31,11 @@ try {
     if (!$sessionId) {
         throw new Exception("Term not found.");
     }
+
+    $activeSession = get_active_academic_session();
+    if (!$activeSession || $activeSession['id'] != $sessionId) {
+        throw new Exception("You can only activate terms belonging to the currently active session.");
+    }
     
     // Deactivate all terms for this session
     $stmt = $pdo->prepare("UPDATE terms SET is_active = 0 WHERE academic_session_id = :session_id");

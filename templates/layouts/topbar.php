@@ -35,7 +35,7 @@ if ($topbarUserId) {
 }
 
 $topbarActiveSession = get_active_academic_session();
-$topbarActiveTerm = $topbarPdo->query("SELECT name FROM terms WHERE is_active = 1 LIMIT 1")->fetchColumn();
+$topbarActiveTerm = $topbarActiveSession ? get_active_term($topbarActiveSession['id']) : null;
 ?>
 <header class="bg-paper border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-20 shadow-sm">
     <div class="flex items-center space-x-6">
@@ -45,7 +45,7 @@ $topbarActiveTerm = $topbarPdo->query("SELECT name FROM terms WHERE is_active = 
             <span class="font-bold">Session:</span> <span><?= e($topbarActiveSession['name']) ?></span>
             <?php if ($topbarActiveTerm): ?>
                 <span>&bull;</span>
-                <span><?= e($topbarActiveTerm) ?></span>
+                <span><?= e($topbarActiveTerm['name']) ?></span>
             <?php endif; ?>
         </div>
         <?php endif; ?>

@@ -22,6 +22,21 @@ function get_active_academic_session(): ?array {
 }
 
 /**
+ * Get the currently active term for a specific academic session.
+ * Returns null if no term is active for that session.
+ */
+function get_active_term(?int $academicSessionId): ?array {
+    if (!$academicSessionId) {
+        return null;
+    }
+    $pdo = get_db_connection();
+    $stmt = $pdo->prepare("SELECT * FROM terms WHERE academic_session_id = ? AND is_active = 1 LIMIT 1");
+    $stmt->execute([$academicSessionId]);
+    $term = $stmt->fetch();
+    return $term ?: null;
+}
+
+/**
  * Get an academic session by its ID.
  */
 function get_academic_session_by_id(int $id): ?array {

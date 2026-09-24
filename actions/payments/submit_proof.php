@@ -44,8 +44,14 @@ if (!empty($errors)) {
     redirect('student/fees.php#submit-proof');
 }
 
-// Ensure invoice belongs to student
-$invStmt = $pdo->prepare("SELECT total_amount, (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE student_invoice_id = student_invoices.id) as amount_paid FROM student_invoices WHERE id = ? AND student_id = ?");
+// Ensure invoice belongs to student and get balance details
+$invStmt = $pdo->prepare("
+    SELECT total_amount, status,
+           (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE student_invoice_id = student_invoices.id) as amount_paid,
+           (SELECT COALESCE(SUM(amount), 0) FROM payment_submissions WHERE invoice_id = student_invoices.id AND status = 'PENDING') as amount_pending
+    FROM student_invoices
+    WHERE id = ? AND student_id = ?
+");
 $invStmt->execute([$invoiceId, $studentId]);
 $invoice = $invStmt->fetch();
 
@@ -54,8 +60,26 @@ if (!$invoice) {
     redirect('student/fees.php#submit-proof');
 }
 
+if ($invoice['status'] === 'PAID') {
+    set_flash('error', 'This invoice is already fully paid.');
+    redirect('student/fees.php#submit-proof');
+}
+
+$outstanding = $invoice['total_amount'] - $invoice['amount_paid'];
+$availableToSubmit = $outstanding - $invoice['amount_pending'];
+
 if ($amount <= 0) {
     set_flash('error', 'Amount must be greater than zero.');
+    redirect('student/fees.php#submit-proof');
+}
+
+if ($availableToSubmit <= 0) {
+    set_flash('error', 'This invoice has no available balance to submit a payment against.');
+    redirect('student/fees.php#submit-proof');
+}
+
+if ($amount > $availableToSubmit) {
+    set_flash('error', 'The submitted amount (₦' . number_format($amount, 2) . ') exceeds the allowable pending balance (₦' . number_format($availableToSubmit, 2) . ') for this invoice.');
     redirect('student/fees.php#submit-proof');
 }
 
@@ -103,7 +127,7 @@ if (!move_uploaded_file($file['tmp_name'], $destPath)) {
 
 try {
     $pdo->beginTransaction();
-    
+
     $stmt = $pdo->prepare("INSERT INTO payment_submissions (student_id, invoice_id, amount, payment_date, sender_bank, transfer_reference, proof_path, note, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'PENDING')");
     $stmt->execute([
         $studentId,
@@ -115,17 +139,34 @@ try {
         $filename,
         $note !== '' ? $note : null
     ]);
-    
+
     $submissionId = $pdo->lastInsertId();
-    
-    // Notify Student
-    $notifStmt = $pdo->prepare("INSERT INTO notifications (user_id, title, message) VALUES (?, ?, ?)");
-    $notifStmt->execute([
-        $userId,
-        "Payment Proof Submitted",
-        "Your payment proof of NGN {$amount} has been submitted and is pending Bursar verification."
-    ]);
-    
+
+    // Student is not notified on submission; they are notified when Bursar verifies the payment.
+
+    // Notify Bursar(s)
+    $bursarStmt = $pdo->query("SELECT u.id FROM users u JOIN roles r ON u.role_id = r.id WHERE r.name = '" . ROLE_BURSAR . "' AND u.status = 'ACTIVE'");
+    $bursars = $bursarStmt->fetchAll(PDO::FETCH_COLUMN);
+
+    $stuStmt = $pdo->prepare("SELECT first_name, last_name FROM students WHERE id = ?");
+    $stuStmt->execute([$studentId]);
+    $studentInfo = $stuStmt->fetch();
+    $studentFullName = $studentInfo ? trim($studentInfo['first_name'] . ' ' . $studentInfo['last_name']) : 'A student';
+
+    $amtFormatted = number_format($amount, 2);
+    $bursarMsg = "{$studentFullName} submitted a ₦{$amtFormatted} bank-transfer proof for invoice #{$invoiceId}.";
+
+    if (!empty($bursars)) {
+        $insertBursarNotif = $pdo->prepare("INSERT INTO notifications (user_id, title, message) VALUES (?, ?, ?)");
+        foreach ($bursars as $bId) {
+            $insertBursarNotif->execute([
+                $bId,
+                "New payment proof submitted",
+                $bursarMsg
+            ]);
+        }
+    }
+
     $pdo->commit();
     set_flash('success', 'Payment proof submitted successfully. It will be reviewed by the Bursar.');
 } catch (Exception $e) {

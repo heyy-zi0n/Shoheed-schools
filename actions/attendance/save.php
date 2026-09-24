@@ -32,7 +32,8 @@ try {
     }
     
     $activeSession = get_active_academic_session();
-    $activeTerm = $pdo->query("SELECT * FROM terms WHERE is_active = 1")->fetch();
+    $activeSession = get_active_academic_session();
+$activeTerm = $activeSession ? get_active_term($activeSession['id']) : null;
     
     if (!$activeSession || !$activeTerm) {
         throw new Exception("No active academic session or term found.");

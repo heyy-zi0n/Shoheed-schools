@@ -103,6 +103,7 @@ CREATE TABLE terms (
     is_active BOOLEAN DEFAULT FALSE,
     start_date DATE NULL,
     end_date DATE NULL,
+    UNIQUE KEY uq_session_term_name (academic_session_id, name),
     FOREIGN KEY (academic_session_id) REFERENCES academic_sessions(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
@@ -260,6 +261,7 @@ CREATE TABLE fee_items (
     fee_structure_id INT NOT NULL,
     name VARCHAR(100) NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
     FOREIGN KEY (fee_structure_id) REFERENCES fee_structures(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
@@ -268,21 +270,26 @@ CREATE TABLE student_invoices (
     student_id INT NOT NULL,
     academic_session_id INT NOT NULL,
     term_id INT NOT NULL,
+    fee_structure_id INT DEFAULT NULL,
     total_amount DECIMAL(10,2) NOT NULL,
     status ENUM('PENDING', 'PARTIAL', 'PAID') DEFAULT 'PENDING',
+    invoice_type ENUM('STANDARD', 'SUPPLEMENTARY') DEFAULT 'STANDARD',
     due_date DATE NULL,
-    UNIQUE (student_id, academic_session_id, term_id),
+    KEY idx_student_id (student_id),
     FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
     FOREIGN KEY (academic_session_id) REFERENCES academic_sessions(id),
-    FOREIGN KEY (term_id) REFERENCES terms(id)
+    FOREIGN KEY (term_id) REFERENCES terms(id),
+    FOREIGN KEY (fee_structure_id) REFERENCES fee_structures(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 CREATE TABLE invoice_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     student_invoice_id INT NOT NULL,
+    source_fee_item_id INT NULL,
     name VARCHAR(100) NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
-    FOREIGN KEY (student_invoice_id) REFERENCES student_invoices(id) ON DELETE CASCADE
+    FOREIGN KEY (student_invoice_id) REFERENCES student_invoices(id) ON DELETE CASCADE,
+    FOREIGN KEY (source_fee_item_id) REFERENCES fee_items(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 CREATE TABLE payments (

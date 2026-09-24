@@ -16,7 +16,8 @@ if (!$studentId) {
 }
 
 $activeSession = get_active_academic_session();
-$activeTerm = $pdo->query("SELECT * FROM terms WHERE is_active = 1")->fetch();
+$activeSession = get_active_academic_session();
+$activeTerm = $activeSession ? get_active_term($activeSession['id']) : null;
 
 $attendance = [];
 $stats = ['PRESENT' => 0, 'ABSENT' => 0, 'LATE' => 0, 'EXCUSED' => 0];

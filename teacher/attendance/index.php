@@ -13,7 +13,8 @@ $pageTitle = 'Class Attendance';
 $pdo = get_db_connection();
 
 $activeSession = get_active_academic_session();
-$activeTerm = $pdo->query("SELECT * FROM terms WHERE is_active = 1")->fetch();
+$activeSession = get_active_academic_session();
+$activeTerm = $activeSession ? get_active_term($activeSession['id']) : null;
 
 if (!$activeSession || !$activeTerm) {
     die("No active session or term.");

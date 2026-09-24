@@ -7,7 +7,8 @@ $pageTitle = 'Result Approvals';
 $pdo = get_db_connection();
 
 $activeSession = get_active_academic_session();
-$activeTerm = $pdo->query("SELECT * FROM terms WHERE is_active = 1")->fetch();
+$activeSession = get_active_academic_session();
+$activeTerm = $activeSession ? get_active_term($activeSession['id']) : null;
 
 $sessions = get_all_academic_sessions();
 $terms = $pdo->query("SELECT * FROM terms ORDER BY name ASC")->fetchAll();

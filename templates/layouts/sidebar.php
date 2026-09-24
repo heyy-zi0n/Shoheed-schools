@@ -22,7 +22,6 @@
             <a href="<?= url('admin/reports/broadsheet.php') ?>" class="block px-6 py-2 text-sm text-gray-300 hover:text-white hover:bg-school-blue transition-colors">Broadsheet</a>
             <div class="px-6 py-2 mt-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Finance & Fees</div>
             <a href="<?= url('admin/finance/fee_structures.php') ?>" class="block px-6 py-2 text-sm text-gray-300 hover:text-white hover:bg-school-blue transition-colors">Fee Structures</a>
-            <a href="<?= url('admin/finance/generate_invoices.php') ?>" class="block px-6 py-2 text-sm text-gray-300 hover:text-white hover:bg-school-blue transition-colors">Generate Invoices</a>
             <a href="<?= url('admin/finance/index.php') ?>" class="block px-6 py-2 text-sm text-gray-300 hover:text-white hover:bg-school-blue transition-colors">Transactions</a>
         <?php elseif ($role === ROLE_PRINCIPAL): ?>
             <div class="px-6 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Academic Head</div>

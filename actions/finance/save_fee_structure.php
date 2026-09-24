@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../../config/bootstrap.php';
 
-require_role([ROLE_ADMIN, ROLE_BURSAR]);
+require_role([ROLE_BURSAR]);
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -57,6 +57,13 @@ try {
         throw new Exception("A fee structure already exists for this Session, Term, and Class combination.");
     }
 
+    // 1b. Verify term belongs to session
+    $termStmt = $pdo->prepare("SELECT academic_session_id FROM terms WHERE id = ?");
+    $termStmt->execute([$termId]);
+    if ($termStmt->fetchColumn() != $sessionId) {
+        throw new Exception("The selected term does not belong to the selected academic session.");
+    }
+
     // 2. Calculate total (derived from items as per requirements)
     $totalAmount = 0;
     foreach ($items as $item) {
@@ -75,7 +82,7 @@ try {
     }
 
     // 5. Audit Log
-    $pdo->prepare("INSERT INTO audit_logs (user_id, action, entity_type, entity_id, description) VALUES (?, 'CREATE_FEE_STRUCTURE', 'fee_structure', ?, ?)")
+    $pdo->prepare("INSERT INTO audit_logs (user_id, action, entity_type, entity_id, description) VALUES (?, 'FEE_STRUCTURE_CREATED', 'fee_structure', ?, ?)")
         ->execute([current_user_id(), $structureId, "Created fee structure '{$name}' totaling {$totalAmount}"]);
 
     $pdo->commit();

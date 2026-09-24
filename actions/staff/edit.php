@@ -25,6 +25,7 @@ $lastName = trim($_POST['last_name'] ?? '');
 $gender = trim($_POST['gender'] ?? '');
 $phone = trim($_POST['phone'] ?? '');
 $email = trim($_POST['email'] ?? '');
+$email = $email === '' ? null : $email;
 $username = trim($_POST['username'] ?? '');
 $newPassword = $_POST['new_password'] ?? '';
 $confirmPassword = $_POST['confirm_password'] ?? '';

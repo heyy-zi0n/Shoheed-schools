@@ -12,7 +12,9 @@ $studentsCount = $pdo->query("SELECT COUNT(*) FROM students")->fetchColumn();
 $staffCount = $pdo->query("SELECT COUNT(*) FROM staff")->fetchColumn();
 
 $activeSession = get_active_academic_session();
-$activeTerm = $pdo->query("SELECT name FROM terms WHERE is_active = 1 LIMIT 1")->fetchColumn() ?: 'None';
+$activeSession = get_active_academic_session();
+$activeTermRow = $activeSession ? get_active_term($activeSession['id']) : null;
+$activeTerm = $activeTermRow ? $activeTermRow['name'] : 'None';
 
 // Calculate outstanding fees (Mocked if actual invoice tables don't exist, but prompt says "Use real data. If data is unavailable, either calculate it correctly or omit that metric... Never fabricate dashboard data").
 // Let's check if invoices exist. Assuming `invoices` table exists with `status` and `amount`.

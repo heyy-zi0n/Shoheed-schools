@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../config/bootstrap.php';
 
 require_role([ROLE_BURSAR]);
@@ -95,7 +95,7 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                             <?php 
                             if ($financeAvailable) {
                                 render_quick_action('Manage Invoices', url('bursar/invoices/index.php'), 'I', 'school-navy');
-                                render_quick_action('Record Payment', url('bursar/payments/create.php'), 'â‚¦', 'sage');
+                                render_quick_action('Record Payment', url('bursar/payments/create.php'), '₦', 'sage');
                                 render_quick_action('Review Transfers', url('bursar/payments/submissions.php'), 'T', 'school-gold');
                             }
                             
@@ -132,7 +132,7 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                                                 </p>
                                             </div>
                                             <div class="text-right">
-                                                <p class="font-bold text-sage text-sm">â‚¦<?= number_format($payment['amount']) ?></p>
+                                                <p class="font-bold text-sage text-sm">₦<?= number_format($payment['amount']) ?></p>
                                                 <p class="text-[10px] text-gray-400 uppercase tracking-wider mt-1"><?= e($payment['payment_method']) ?></p>
                                             </div>
                                         </div>
