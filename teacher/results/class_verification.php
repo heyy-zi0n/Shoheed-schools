@@ -14,7 +14,6 @@ $pdo = get_db_connection();
 
 // Get active session and term
 $activeSession = get_active_academic_session();
-$activeSession = get_active_academic_session();
 $activeTerm = $activeSession ? get_active_term($activeSession['id']) : null;
 
 if (!$activeSession || !$activeTerm) {
@@ -22,8 +21,6 @@ if (!$activeSession || !$activeTerm) {
 }
 
 $classId = filter_input(INPUT_GET, 'class', FILTER_VALIDATE_INT);
-
-
 
 // Get assigned classes
 $stmt = $pdo->prepare("
@@ -40,7 +37,6 @@ if (empty($assignedClasses)) {
 }
 
 if (!$classId) {
-    // Redirect to the first assigned class
     redirect('teacher/results/class_verification.php?class=' . $assignedClasses[0]['id']);
 }
 
@@ -59,13 +55,21 @@ if (!$isAssigned) {
     die("You are not the assigned Class Teacher for this class.");
 }
 
-// Get batch status
+// Get or initialize batch for this class/session/term
 $stmt = $pdo->prepare("SELECT * FROM result_batches WHERE class_id = :cid AND academic_session_id = :sid AND term_id = :tid");
 $stmt->execute(['cid' => $classId, 'sid' => $activeSession['id'], 'tid' => $activeTerm['id']]);
 $batch = $stmt->fetch();
 
-$batchStatus = $batch ? $batch['status'] : 'DRAFT';
-$batchId = $batch ? $batch['id'] : null;
+if (!$batch) {
+    $insBatch = $pdo->prepare("INSERT INTO result_batches (class_id, academic_session_id, term_id, status) VALUES (?, ?, ?, 'DRAFT')");
+    $insBatch->execute([$classId, $activeSession['id'], $activeTerm['id']]);
+    $stmt->execute(['cid' => $classId, 'sid' => $activeSession['id'], 'tid' => $activeTerm['id']]);
+    $batch = $stmt->fetch();
+}
+
+$batchStatus = $batch['status'];
+$batchId = (int)$batch['id'];
+$isBatchEditable = in_array($batchStatus, ['DRAFT', 'SUBMITTED', 'REVISION_REQUIRED'], true);
 
 // Get expected subjects (based on class_subjects)
 $stmt = $pdo->prepare("
@@ -80,24 +84,86 @@ $stmt = $pdo->prepare("
     ORDER BY s.name ASC
 ");
 $stmt->execute([
-    'batch_id' => $batchId ?? 0,
+    'batch_id'   => $batchId,
     'class_id_1' => $classId,
     'class_id_2' => $classId,
-    'sess_id' => $activeSession['id']
+    'sess_id'    => $activeSession['id']
 ]);
 $subjects = $stmt->fetchAll();
 
 $allSubmitted = true;
 $anySubject = false;
+$submittedCount = 0;
 foreach ($subjects as $sub) {
     $anySubject = true;
-    if ($sub['status'] !== 'SUBMITTED') {
+    if (($sub['status'] ?? 'NOT STARTED') === 'SUBMITTED') {
+        $submittedCount++;
+    } else {
         $allSubmitted = false;
-        break;
     }
 }
 
-$canVerify = ($allSubmitted && $anySubject && in_array($batchStatus, ['DRAFT', 'SUBMITTED']));
+$canVerify = ($allSubmitted && $anySubject);
+
+// Fetch active students in this class + their average score & existing evaluation
+$stuStmt = $pdo->prepare("
+    SELECT st.id, st.admission_number, st.first_name, st.middle_name, st.last_name, st.gender
+    FROM students st
+    JOIN student_enrollments se ON st.id = se.student_id
+    WHERE se.class_id = :cid AND se.academic_session_id = :sid AND se.status = 'ACTIVE'
+    ORDER BY st.last_name ASC, st.first_name ASC
+");
+$stuStmt->execute(['cid' => $classId, 'sid' => $activeSession['id']]);
+$classStudents = $stuStmt->fetchAll();
+
+$evalMap = [];
+$evalStmt = $pdo->prepare("SELECT * FROM student_result_evaluations WHERE result_batch_id = ?");
+$evalStmt->execute([$batchId]);
+foreach ($evalStmt->fetchAll() as $ev) {
+    $evalMap[(int)$ev['student_id']] = $ev;
+}
+
+$avgMap = [];
+$avgStmt = $pdo->prepare("
+    SELECT student_id, AVG(COALESCE(ca_score, 0) + COALESCE(exam_score, 0)) AS avg_score
+    FROM scores
+    WHERE result_batch_id = ?
+    GROUP BY student_id
+");
+$avgStmt->execute([$batchId]);
+foreach ($avgStmt->fetchAll() as $ar) {
+    $avgMap[(int)$ar['student_id']] = (float)$ar['avg_score'];
+}
+
+// Fetch live attendance counts from the Class Attendance register (attendance table)
+$openedStmt = $pdo->prepare("
+    SELECT COUNT(DISTINCT attendance_date)
+    FROM attendance
+    WHERE class_id = ? AND academic_session_id = ? AND term_id = ?
+");
+$openedStmt->execute([$classId, $activeSession['id'], $activeTerm['id']]);
+$classDaysOpened = (int)$openedStmt->fetchColumn();
+
+$stuAttMap = [];
+$stuAttStmt = $pdo->prepare("
+    SELECT student_id, status, COUNT(*) AS cnt
+    FROM attendance
+    WHERE class_id = ? AND academic_session_id = ? AND term_id = ?
+    GROUP BY student_id, status
+");
+$stuAttStmt->execute([$classId, $activeSession['id'], $activeTerm['id']]);
+foreach ($stuAttStmt->fetchAll() as $row) {
+    $sid = (int)$row['student_id'];
+    $stKey = strtoupper(trim($row['status']));
+    if (!isset($stuAttMap[$sid])) {
+        $stuAttMap[$sid] = ['PRESENT' => 0, 'LATE' => 0, 'EXCUSED' => 0, 'ABSENT' => 0];
+    }
+    if (isset($stuAttMap[$sid][$stKey])) {
+        $stuAttMap[$sid][$stKey] += (int)$row['cnt'];
+    }
+}
+
+$sdbaCategories = get_sdba_categories();
 
 require __DIR__ . '/../../templates/layouts/app-header.php';
 ?>
@@ -112,7 +178,7 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                 <div>
                     <h1 class="text-2xl font-serif font-bold text-school-navy">Class Result Verification</h1>
                     <p class="text-sm text-slate-gray">
-                        <?= e($className) ?> &bull; <?= e($activeTerm['name']) ?>
+                        <?= e($className) ?> &bull; <?= e($activeTerm['name']) ?> (<?= e($activeSession['name']) ?>)
                     </p>
                 </div>
                 <div>
@@ -140,9 +206,10 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                     </div>
                 </div>
                 
-                <!-- Subjects List -->
-                <div class="md:w-3/4">
-                    <div class="bg-paper p-6 rounded-lg shadow-sm border border-gray-100 mb-6">
+                <!-- Main Content -->
+                <div class="md:w-3/4 space-y-6">
+                    <!-- Subject Submissions Table -->
+                    <div class="bg-paper p-6 rounded-lg shadow-sm border border-gray-100">
                         <h3 class="text-lg font-bold text-school-navy mb-4">Subject Submissions</h3>
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-200">
@@ -175,10 +242,8 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <?php if ($subStatus === 'SUBMITTED' && in_array($batchStatus, ['DRAFT', 'SUBMITTED'])): ?>
-                                                <button onclick="requestRevision(<?= $sub['id'] ?>, '<?= e($sub['name']) ?>')" class="text-red-600 hover:text-red-900">Request Revision</button>
-                                            <?php elseif ($subStatus === 'REVISION_REQUIRED'): ?>
-                                                <span class="text-xs text-red-500">Awaiting Revision</span>
+                                            <?php if (in_array($subStatus, ['SUBMITTED', 'REVISION_REQUIRED'])): ?>
+                                                <a href="<?= url("teacher/results/review_subject.php?class={$classId}&subject={$sub['id']}") ?>" class="text-school-blue hover:text-school-navy">Review</a>
                                             <?php else: ?>
                                                 <span class="text-gray-400">-</span>
                                             <?php endif; ?>
@@ -192,12 +257,148 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                             </table>
                         </div>
                     </div>
+
+                    <!-- Report Card Settings & Student Evaluations (SDBA & Comments) -->
+                    <form action="<?= url('actions/results/save_evaluations.php') ?>" method="POST" class="bg-paper p-6 rounded-lg shadow-sm border border-gray-100">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="batch_id" value="<?= $batchId ?>">
+                        <input type="hidden" name="return_url" value="<?= e("teacher/results/class_verification.php?class={$classId}") ?>">
+
+                        <div class="flex flex-wrap justify-between items-center gap-4 border-b border-gray-200 pb-4 mb-6">
+                            <div>
+                                <h3 class="text-lg font-bold text-school-navy">Report Card Settings, SDBA &amp; Comments</h3>
+                                <p class="text-xs text-slate-gray">Configure terminal duration, attendance counts, behavioural ratings (1–5), and class teacher comments for the report sheet.</p>
+                            </div>
+                            <?php if ($isBatchEditable && !empty($classStudents)): ?>
+                            <div class="flex flex-wrap gap-2">
+                                <button type="button" onclick="autoFillEvaluations()" class="bg-gray-100 hover:bg-gray-200 text-charcoal border border-gray-300 px-3 py-1.5 rounded text-xs font-semibold transition-colors">
+                                    Auto-Fill Empty Ratings &amp; Comments
+                                </button>
+                                <button type="submit" class="bg-school-blue hover:bg-school-navy text-white px-5 py-1.5 rounded text-xs font-semibold transition-colors shadow-sm">
+                                    Save Report Card Evaluations
+                                </button>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- Batch Terminal Duration & Attendance -->
+                        <fieldset class="mb-6 bg-gray-50 p-4 rounded-md border border-gray-200" <?= !$isBatchEditable ? 'disabled' : '' ?>>
+                            <legend class="text-xs font-bold uppercase tracking-wider text-school-navy px-1">Terminal Duration &amp; School Attendance</legend>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-2 items-end">
+                                <div>
+                                    <label for="term_begins" class="block text-xs font-semibold text-charcoal mb-1">Term Begins</label>
+                                    <input type="date" id="term_begins" name="term_begins" value="<?= e($batch['term_begins'] ?: ($activeTerm['start_date'] ?? '')) ?>" class="w-full border border-gray-300 rounded px-2.5 py-1.5 text-xs">
+                                </div>
+                                <div>
+                                    <label for="term_ends" class="block text-xs font-semibold text-charcoal mb-1">Term Ends</label>
+                                    <input type="date" id="term_ends" name="term_ends" value="<?= e($batch['term_ends'] ?: ($activeTerm['end_date'] ?? '')) ?>" class="w-full border border-gray-300 rounded px-2.5 py-1.5 text-xs">
+                                </div>
+                                <div>
+                                    <label for="next_term_begins" class="block text-xs font-semibold text-charcoal mb-1">Next Term Begins</label>
+                                    <input type="date" id="next_term_begins" name="next_term_begins" value="<?= e($batch['next_term_begins'] ?? '') ?>" class="w-full border border-gray-300 rounded px-2.5 py-1.5 text-xs">
+                                </div>
+                                <div>
+                                    <label for="duration_weeks" class="block text-xs font-semibold text-charcoal mb-1">Duration (Weeks)</label>
+                                    <input type="number" id="duration_weeks" name="duration_weeks" min="1" max="52" value="<?= (int)($batch['duration_weeks'] ?: 14) ?>" class="w-full border border-gray-300 rounded px-2.5 py-1.5 text-xs">
+                                </div>
+                                <div class="bg-white border border-gray-200 rounded px-3 py-1.5 text-xs">
+                                    <div class="text-[11px] font-semibold text-slate-gray">Times Sch. Opened (Marked)</div>
+                                    <div class="flex items-center justify-between mt-0.5">
+                                        <span class="font-bold text-school-navy text-sm"><?= $classDaysOpened ?></span>
+                                        <a href="<?= url("teacher/attendance/index.php?class={$classId}") ?>" class="text-[11px] text-school-blue hover:underline font-medium">Mark Attendance &rarr;</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <!-- Student Evaluation Cards -->
+                        <?php if (empty($classStudents)): ?>
+                            <p class="text-sm text-slate-gray text-center py-4">No active students enrolled in this class.</p>
+                        <?php else: ?>
+                            <div class="space-y-4">
+                                <?php foreach ($classStudents as $stu):
+                                    $sid = (int)$stu['id'];
+                                    $ev = $evalMap[$sid] ?? [];
+                                    $stuAvg = $avgMap[$sid] ?? 0.0;
+                                    $defaultTeacherComment = get_default_teacher_comment($stuAvg);
+                                    $att = $stuAttMap[$sid] ?? ['PRESENT' => 0, 'LATE' => 0, 'EXCUSED' => 0, 'ABSENT' => 0];
+                                    $stuPresent = $att['PRESENT'] + $att['LATE'];
+                                    $stuAbsent = $att['ABSENT'];
+                                ?>
+                                <details class="border border-gray-200 rounded-md bg-white group" open>
+                                    <summary class="px-4 py-3 bg-gray-50 cursor-pointer flex flex-wrap justify-between items-center gap-2 font-medium text-sm text-charcoal">
+                                        <div>
+                                            <span class="font-bold text-school-navy"><?= e($stu['last_name'] . ' ' . $stu['first_name'] . ' ' . ($stu['middle_name'] ?? '')) ?></span>
+                                            <span class="text-xs text-slate-gray ml-2">(<?= e($stu['admission_number']) ?> &bull; Avg: <?= number_format($stuAvg, 1) ?>%)</span>
+                                        </div>
+                                        <div class="flex items-center gap-3">
+                                            <a href="<?= url("teacher/results/report_preview.php?batch_id={$batchId}&student_id={$sid}") ?>" class="text-xs font-semibold text-school-blue hover:underline" onclick="event.stopPropagation();">
+                                                Preview Report Card &rarr;
+                                            </a>
+                                        </div>
+                                    </summary>
+
+                                    <div class="p-4 space-y-4 border-t border-gray-200">
+                                        <!-- Marked Attendance Summary & Teacher Comment Row -->
+                                        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                                            <div class="md:col-span-4 bg-gray-50 border border-gray-200 rounded px-3 py-2 text-xs flex items-center justify-between">
+                                                <div>
+                                                    <span class="text-slate-gray font-semibold">Marked Attendance:</span>
+                                                    <span class="ml-1 font-bold text-school-blue">Present: <?= $stuPresent ?></span>
+                                                    <span class="mx-1 text-gray-300">|</span>
+                                                    <span class="font-bold text-school-red">Absent: <?= $stuAbsent === 0 ? 'NIL (0)' : $stuAbsent ?></span>
+                                                </div>
+                                            </div>
+                                            <div class="md:col-span-8">
+                                                <label for="tc_<?= $sid ?>" class="block text-xs font-semibold text-charcoal mb-1">Class Teacher's Comment</label>
+                                                <input type="text" id="tc_<?= $sid ?>" name="evaluations[<?= $sid ?>][class_teacher_comment]" maxlength="500" value="<?= e($ev['class_teacher_comment'] ?? '') ?>" data-default-comment="<?= e($defaultTeacherComment) ?>" <?= !$isBatchEditable ? 'disabled' : '' ?> placeholder="<?= e($defaultTeacherComment) ?>" class="teacher-comment-input w-full border border-gray-300 rounded px-2.5 py-1.5 text-xs">
+                                            </div>
+                                        </div>
+
+                                        <!-- SDBA Ratings (1 to 5) -->
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-gray-100">
+                                            <?php foreach ($sdbaCategories as $catName => $catFields): ?>
+                                                <div class="bg-gray-50 p-3 rounded border border-gray-200">
+                                                    <div class="text-[11px] font-bold uppercase tracking-wider text-school-navy mb-2"><?= e($catName) ?> (1–5)</div>
+                                                    <div class="space-y-1.5">
+                                                        <?php foreach ($catFields as $col => $label):
+                                                            $curVal = $ev[$col] ?? '';
+                                                            $inputId = "sdba_{$sid}_{$col}";
+                                                        ?>
+                                                            <div class="flex items-center justify-between gap-2 text-xs">
+                                                                <label for="<?= e($inputId) ?>" class="text-[11px] font-medium text-charcoal"><?= e($label) ?></label>
+                                                                <select id="<?= e($inputId) ?>" name="evaluations[<?= $sid ?>][<?= e($col) ?>]" <?= !$isBatchEditable ? 'disabled' : '' ?> class="sdba-select border border-gray-300 rounded px-2 py-0.5 text-xs bg-white">
+                                                                    <option value="">-</option>
+                                                                    <?php for ($r = 5; $r >= 1; $r--): ?>
+                                                                        <option value="<?= $r ?>" <?= (string)$curVal === (string)$r ? 'selected' : '' ?>><?= $r ?></option>
+                                                                    <?php endfor; ?>
+                                                                </select>
+                                                            </div>
+                                                        <?php endforeach; ?>
+                                                    </div>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </div>
+                                </details>
+                                <?php endforeach; ?>
+                            </div>
+
+                            <?php if ($isBatchEditable): ?>
+                            <div class="mt-6 flex justify-end">
+                                <button type="submit" class="bg-school-blue hover:bg-school-navy text-white px-6 py-2 rounded text-sm font-medium transition-colors shadow-sm">
+                                    Save Report Card Evaluations
+                                </button>
+                            </div>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                    </form>
                     
-                    <?php if (in_array($batchStatus, ['DRAFT', 'SUBMITTED'])): ?>
+                    <?php if ($isBatchEditable): ?>
                     <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
                         <h3 class="text-lg font-bold text-school-navy mb-2">Class Verification</h3>
                         <?php if ($canVerify): ?>
-                            <p class="text-sm text-slate-gray mb-4">All subjects have been submitted. You can now verify the results for this class and forward them to the Principal.</p>
+                            <p class="text-sm text-slate-gray mb-4">All expected subjects have been submitted. Ensure you have saved the Report Card Evaluations above before forwarding to the Principal.</p>
                             <form action="<?= url('actions/results/class_verify.php') ?>" method="POST">
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="class_id" value="<?= $classId ?>">
@@ -207,8 +408,8 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                                 </button>
                             </form>
                         <?php else: ?>
-                            <p class="text-sm text-red-600 mb-4 font-medium">You cannot verify this class yet. All subjects must be SUBMITTED.</p>
-                            <button disabled class="bg-gray-300 text-gray-500 px-6 py-2 rounded font-medium text-sm cursor-not-allowed">
+                            <p class="text-sm text-red-600 mb-4 font-medium"><?= $submittedCount ?> of <?= count($subjects) ?> subjects submitted. All subjects must be submitted before class verification.</p>
+                            <button type="button" disabled class="bg-gray-300 text-gray-500 px-6 py-2 rounded font-medium text-sm cursor-not-allowed">
                                 Verify Class Results
                             </button>
                         <?php endif; ?>
@@ -221,41 +422,18 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
     </div>
 </div>
 
-<!-- Revision Modal -->
-<div id="revisionModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
-        <form action="<?= url('actions/results/request_revision.php') ?>" method="POST">
-            <?= csrf_field() ?>
-            <input type="hidden" name="class_id" value="<?= $classId ?>">
-            <input type="hidden" name="batch_id" value="<?= $batchId ?>">
-            <input type="hidden" name="subject_id" id="revision_subject_id" value="">
-            
-            <div class="px-6 py-4 border-b border-gray-200">
-                <h3 class="text-lg font-bold text-school-navy">Request Revision</h3>
-            </div>
-            <div class="p-6">
-                <p class="text-sm text-slate-gray mb-4">Requesting revision for <strong id="revision_subject_name"></strong>. This will unlock the scores for the subject teacher to edit.</p>
-                <div>
-                    <label class="block text-sm font-medium text-charcoal mb-1">Reason for Revision</label>
-                    <textarea name="comments" required rows="3" class="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-school-blue focus:border-school-blue sm:text-sm"></textarea>
-                </div>
-            </div>
-            <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3 bg-gray-50 rounded-b-lg">
-                <button type="button" onclick="closeRevisionModal()" class="bg-white border border-gray-300 text-charcoal px-4 py-2 rounded text-sm font-medium hover:bg-gray-50">Cancel</button>
-                <button type="submit" class="bg-school-red text-white px-4 py-2 rounded text-sm font-medium hover:bg-red-700">Request Revision</button>
-            </div>
-        </form>
-    </div>
-</div>
-
 <script>
-function requestRevision(subjectId, subjectName) {
-    document.getElementById('revision_subject_id').value = subjectId;
-    document.getElementById('revision_subject_name').innerText = subjectName;
-    document.getElementById('revisionModal').classList.remove('hidden');
-}
-function closeRevisionModal() {
-    document.getElementById('revisionModal').classList.add('hidden');
+function autoFillEvaluations() {
+    document.querySelectorAll('.sdba-select').forEach(function (sel) {
+        if (sel.value === '') {
+            sel.value = '4';
+        }
+    });
+    document.querySelectorAll('.teacher-comment-input').forEach(function (inp) {
+        if (inp.value.trim() === '' && inp.dataset.defaultComment) {
+            inp.value = inp.dataset.defaultComment;
+        }
+    });
 }
 </script>
 

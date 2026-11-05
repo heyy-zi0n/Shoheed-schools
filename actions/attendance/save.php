@@ -26,14 +26,14 @@ try {
     $pdo = get_db_connection();
     
     // Verify assignment (security check)
+    $userId = current_user_id();
     $staffId = current_staff_id();
     if (!$staffId) {
         throw new Exception("Access denied. You do not have a staff profile.");
     }
     
     $activeSession = get_active_academic_session();
-    $activeSession = get_active_academic_session();
-$activeTerm = $activeSession ? get_active_term($activeSession['id']) : null;
+    $activeTerm = $activeSession ? get_active_term($activeSession['id']) : null;
     
     if (!$activeSession || !$activeTerm) {
         throw new Exception("No active academic session or term found.");
@@ -49,21 +49,22 @@ $activeTerm = $activeSession ? get_active_term($activeSession['id']) : null;
     $stmt = $pdo->prepare("
         INSERT INTO attendance (student_id, class_id, academic_session_id, term_id, attendance_date, status, recorded_by)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE status = VALUES(status), recorded_by = VALUES(recorded_by)
+        ON DUPLICATE KEY UPDATE term_id = VALUES(term_id), class_id = VALUES(class_id), status = VALUES(status), recorded_by = VALUES(recorded_by)
     ");
     
-    $validStatuses = ['PRESENT', 'ABSENT', 'LATE', 'EXCUSED'];
+    $validStatuses = ['PRESENT', 'ABSENT'];
     
     foreach ($attendance as $studentId => $status) {
-        if (in_array($status, $validStatuses)) {
+        $statusUpper = strtoupper(trim((string)$status));
+        if (in_array($statusUpper, $validStatuses, true)) {
             $stmt->execute([
-                $studentId,
+                (int)$studentId,
                 $classId,
                 $activeSession['id'],
                 $activeTerm['id'],
                 $attendanceDate,
-                $status,
-                $staffId
+                $statusUpper,
+                $userId
             ]);
         }
     }

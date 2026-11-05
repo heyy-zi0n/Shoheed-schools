@@ -127,7 +127,10 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <div class="flex justify-end space-x-3">
+                                    <div class="flex justify-end items-center space-x-4">
+                                        <a href="<?= url("principal/results/review.php?batch_id={$batch['id']}") ?>" class="text-school-blue hover:text-school-navy font-semibold">
+                                            Review &amp; Comments
+                                        </a>
                                         <?php if ($batch['status'] !== 'PUBLISHED'): ?>
                                         <form action="<?= url('actions/results/principal_approve.php') ?>" method="POST" class="inline">
                                             <?= csrf_field() ?>

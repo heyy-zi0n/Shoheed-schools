@@ -6,7 +6,6 @@ require_role([ROLE_ADMIN, ROLE_PRINCIPAL]);
 $pdo = get_db_connection();
 
 $sessions = get_all_academic_sessions();
-$terms = $pdo->query("SELECT * FROM terms ORDER BY name ASC")->fetchAll();
 $classes = $pdo->query("SELECT * FROM classes ORDER BY level ASC")->fetchAll();
 
 $sessionId = filter_var($_GET['academic_session_id'] ?? null, FILTER_VALIDATE_INT);
@@ -17,7 +16,22 @@ $students = [];
 $subjects = [];
 $scores = [];
 
+$terms = [];
+if ($sessionId) {
+    $termStmt = $pdo->prepare("SELECT * FROM terms WHERE academic_session_id = ? ORDER BY id ASC");
+    $termStmt->execute([$sessionId]);
+    $terms = $termStmt->fetchAll();
+}
+
 if ($sessionId && $termId && $classId) {
+    // Validate session and term match
+    $termCheck = $pdo->prepare("SELECT id FROM terms WHERE id = ? AND academic_session_id = ?");
+    $termCheck->execute([$termId, $sessionId]);
+    if (!$termCheck->fetchColumn()) {
+        set_flash('error', 'The selected Term does not belong to the selected Academic Session.');
+        redirect('admin/reports/broadsheet.php');
+    }
+
     // 1. Get dynamically assigned subjects for this class
     $subStmt = $pdo->prepare("
         SELECT s.id, s.name, s.code 
@@ -323,5 +337,30 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
     </table>
 </div>
 <?php endif; ?>
+
+<script>
+document.querySelector('select[name="academic_session_id"]').addEventListener('change', function() {
+    const sessionId = this.value;
+    const termSelect = document.querySelector('select[name="term_id"]');
+    
+    termSelect.innerHTML = '<option value="">Select Term...</option>';
+    
+    if (sessionId) {
+        fetch('<?= url("actions/academics/get_terms.php") ?>?session_id=' + sessionId)
+            .then(res => res.json())
+            .then(data => {
+                if (data.terms) {
+                    data.terms.forEach(term => {
+                        const option = document.createElement('option');
+                        option.value = term.id;
+                        option.textContent = term.name;
+                        termSelect.appendChild(option);
+                    });
+                }
+            })
+            .catch(err => console.error('Error fetching terms:', err));
+    }
+});
+</script>
 
 <?php require __DIR__ . '/../../templates/layouts/app-footer.php'; ?>

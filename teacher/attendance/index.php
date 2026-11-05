@@ -130,14 +130,15 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-gray uppercase tracking-wider">Student</th>
                                             <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-slate-gray uppercase tracking-wider">Present</th>
                                             <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-slate-gray uppercase tracking-wider">Absent</th>
-                                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-slate-gray uppercase tracking-wider">Late</th>
-                                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-slate-gray uppercase tracking-wider">Excused</th>
                                         </tr>
                                     </thead>
                                     <tbody class="bg-white divide-y divide-gray-200">
                                         <?php foreach ($students as $student): 
                                             $sid = $student['id'];
-                                            $status = $student['attendance_status'] ?? 'PRESENT'; // default present
+                                            $status = strtoupper($student['attendance_status'] ?? 'PRESENT');
+                                            if ($status !== 'ABSENT') {
+                                                $status = 'PRESENT';
+                                            }
                                         ?>
                                         <tr class="hover:bg-gray-50">
                                             <td class="px-6 py-4 whitespace-nowrap">
@@ -145,21 +146,15 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                                                 <div class="text-xs text-slate-gray"><?= e($student['admission_number']) ?></div>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-center">
-                                                <input type="radio" name="attendance[<?= $sid ?>]" value="PRESENT" <?= $status === 'PRESENT' ? 'checked' : '' ?> class="w-4 h-4 text-school-blue focus:ring-school-blue border-gray-300">
+                                                <input type="radio" name="attendance[<?= $sid ?>]" value="PRESENT" aria-label="Mark <?= e($student['last_name'] . ' ' . $student['first_name']) ?> Present" <?= $status === 'PRESENT' ? 'checked' : '' ?> class="w-4 h-4 text-school-blue focus:ring-school-blue border-gray-300">
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-center">
-                                                <input type="radio" name="attendance[<?= $sid ?>]" value="ABSENT" <?= $status === 'ABSENT' ? 'checked' : '' ?> class="w-4 h-4 text-red-600 focus:ring-red-500 border-gray-300">
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-center">
-                                                <input type="radio" name="attendance[<?= $sid ?>]" value="LATE" <?= $status === 'LATE' ? 'checked' : '' ?> class="w-4 h-4 text-yellow-600 focus:ring-yellow-500 border-gray-300">
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-center">
-                                                <input type="radio" name="attendance[<?= $sid ?>]" value="EXCUSED" <?= $status === 'EXCUSED' ? 'checked' : '' ?> class="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300">
+                                                <input type="radio" name="attendance[<?= $sid ?>]" value="ABSENT" aria-label="Mark <?= e($student['last_name'] . ' ' . $student['first_name']) ?> Absent" <?= $status === 'ABSENT' ? 'checked' : '' ?> class="w-4 h-4 text-red-600 focus:ring-red-500 border-gray-300">
                                             </td>
                                         </tr>
                                         <?php endforeach; ?>
                                         <?php if (empty($students)): ?>
-                                            <tr><td colspan="5" class="text-center py-4 text-slate-gray">No students enrolled in this class.</td></tr>
+                                            <tr><td colspan="3" class="text-center py-4 text-slate-gray">No students enrolled in this class.</td></tr>
                                         <?php endif; ?>
                                     </tbody>
                                 </table>

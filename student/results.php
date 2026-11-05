@@ -35,34 +35,26 @@ $selectedSessionId = filter_input(INPUT_GET, 'session', FILTER_VALIDATE_INT);
 $selectedTermId = filter_input(INPUT_GET, 'term', FILTER_VALIDATE_INT);
 $selectedClassId = filter_input(INPUT_GET, 'class', FILTER_VALIDATE_INT);
 
-$scores = [];
 $termDetails = null;
+$report = null;
 
 if ($selectedSessionId && $selectedTermId && $selectedClassId) {
-    // Find term name
     foreach ($availableTerms as $t) {
-        if ($t['academic_session_id'] == $selectedSessionId && $t['term_id'] == $selectedTermId) {
+        if ($t['academic_session_id'] == $selectedSessionId && $t['term_id'] == $selectedTermId && $t['class_id'] == $selectedClassId) {
             $termDetails = $t;
             break;
         }
     }
-    
+
     if ($termDetails) {
-        $stmt = $pdo->prepare("
-            SELECT sub.name as subject_name, s.ca_score, s.exam_score, s.total_score, s.grade, s.remark
-            FROM scores s
-            JOIN result_batches rb ON s.result_batch_id = rb.id
-            JOIN subjects sub ON s.subject_id = sub.id
-            WHERE s.student_id = :sid AND rb.academic_session_id = :session_id AND rb.term_id = :term_id AND rb.class_id = :class_id AND rb.status = 'PUBLISHED'
-            ORDER BY sub.name ASC
-        ");
-        $stmt->execute([
-            'sid' => $student['id'],
-            'session_id' => $selectedSessionId,
-            'term_id' => $selectedTermId,
-            'class_id' => $selectedClassId
-        ]);
-        $scores = $stmt->fetchAll();
+        $report = build_student_report_card_data(
+            $pdo,
+            (int)$student['id'],
+            (int)$selectedSessionId,
+            (int)$selectedTermId,
+            (int)$selectedClassId,
+            true
+        );
     }
 } elseif (!empty($availableTerms)) {
     // Select first one by default
@@ -72,21 +64,31 @@ if ($selectedSessionId && $selectedTermId && $selectedClassId) {
 
 require __DIR__ . '/../templates/layouts/app-header.php';
 ?>
-<div class="flex h-screen overflow-hidden">
+<div class="flex h-screen overflow-hidden print-layout-root">
     <?php require __DIR__ . '/../templates/layouts/sidebar.php'; ?>
-    <div class="flex-1 flex flex-col overflow-hidden">
+    <div class="flex-1 flex flex-col overflow-hidden print-layout-content">
         <?php require __DIR__ . '/../templates/layouts/topbar.php'; ?>
         <main class="flex-1 overflow-x-hidden overflow-y-auto bg-ivory p-6">
-            <?php require __DIR__ . '/../templates/components/alert.php'; ?>
-            
-            <div class="mb-8">
-                <h1 class="text-2xl font-serif font-bold text-school-navy">My Results</h1>
-                <p class="text-sm text-slate-gray">View your published academic performance.</p>
+            <div class="no-print">
+                <?php require __DIR__ . '/../templates/components/alert.php'; ?>
             </div>
             
-            <div class="flex flex-col md:flex-row gap-8">
+            <div class="mb-8 flex flex-wrap justify-between items-center gap-4 no-print">
+                <div>
+                    <h1 class="text-2xl font-serif font-bold text-school-navy">My Results</h1>
+                    <p class="text-sm text-slate-gray">View and print your published Continuous Assessment Report.</p>
+                </div>
+                <?php if ($report): ?>
+                <button type="button" onclick="window.print()" class="bg-school-blue text-white hover:bg-school-navy px-5 py-2 rounded text-sm font-medium transition-colors inline-flex items-center shadow-sm">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                    Print Result
+                </button>
+                <?php endif; ?>
+            </div>
+            
+            <div class="flex flex-col md:flex-row gap-8 print-layout-row">
                 <!-- Sidebar selector -->
-                <div class="md:w-1/4">
+                <div class="md:w-1/4 no-print">
                     <div class="bg-paper p-4 rounded-lg shadow-sm border border-gray-100 sticky top-6">
                         <h3 class="text-sm font-bold text-school-navy uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Available Results</h3>
                         
@@ -95,7 +97,7 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                         <?php else: ?>
                             <ul class="space-y-2">
                                 <?php foreach ($availableTerms as $t): 
-                                    $isActive = ($termDetails && $t['term_id'] == $termDetails['term_id'] && $t['academic_session_id'] == $termDetails['academic_session_id']);
+                                    $isActive = ($termDetails && $t['term_id'] == $termDetails['term_id'] && $t['academic_session_id'] == $termDetails['academic_session_id'] && $t['class_id'] == $termDetails['class_id']);
                                 ?>
                                     <li>
                                         <a href="<?= url("student/results.php?session={$t['academic_session_id']}&term={$t['term_id']}&class={$t['class_id']}") ?>" 
@@ -111,98 +113,15 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                 </div>
                 
                 <!-- Main result display -->
-                <div class="md:w-3/4">
-                    <?php if ($termDetails): ?>
-                        <div class="bg-paper p-8 rounded-lg shadow-sm border border-gray-100">
-                            <!-- Report Card Header -->
-                            <div class="border-b-4 border-school-blue pb-6 mb-8 text-center flex flex-col items-center">
-                                <img src="<?= url('assets/images/branding/shoheed-logo.png') ?>" alt="Logo" class="h-16 mb-4">
-                                <h2 class="text-2xl font-serif font-bold text-school-navy uppercase tracking-wide">Shoheed Schools</h2>
-                                <p class="text-xs text-school-red uppercase tracking-widest font-bold mb-4">Terminal Academic Report</p>
-                                
-                                <div class="w-full flex justify-between text-left mt-6 pt-6 border-t border-gray-100 bg-gray-50 p-4 rounded text-sm">
-                                    <div>
-                                        <p><span class="font-semibold text-slate-gray">Name:</span> <span class="font-bold text-charcoal"><?= e($student['last_name'] . ' ' . $student['first_name']) ?></span></p>
-                                        <p><span class="font-semibold text-slate-gray">Admission No:</span> <span class="font-bold text-charcoal"><?= e($student['admission_number']) ?></span></p>
-                                    </div>
-                                    <div>
-                                        <p><span class="font-semibold text-slate-gray">Class:</span> <span class="font-bold text-charcoal"><?= e($termDetails['class_name']) ?></span></p>
-                                        <p><span class="font-semibold text-slate-gray">Term/Session:</span> <span class="font-bold text-charcoal"><?= e($termDetails['term_name']) ?> (<?= e($termDetails['session_name']) ?>)</span></p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Grades -->
-                            <?php if (empty($scores)): ?>
-                                <p class="text-center text-slate-gray py-8">No scores recorded for this term.</p>
-                            <?php else: ?>
-                                <div class="overflow-x-auto">
-                                    <table class="min-w-full divide-y divide-gray-200 border border-gray-200">
-                                        <thead class="bg-school-navy text-white">
-                                            <tr>
-                                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Subject</th>
-                                                <th scope="col" class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">CA (40)</th>
-                                                <th scope="col" class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Exam (60)</th>
-                                                <th scope="col" class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Total (100)</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="bg-white divide-y divide-gray-200">
-                                            <?php 
-                                            $totalOverall = 0;
-                                            $subjectCount = count($scores);
-                                            foreach ($scores as $score): 
-                                                $ca = (float)($score['ca_score'] ?? 0);
-                                                $ex = (float)($score['exam_score'] ?? 0);
-                                                $tot = (float)($score['total_score'] ?? 0);
-                                                $totalOverall += $tot;
-                                            ?>
-                                            <tr class="hover:bg-gray-50">
-                                                <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-charcoal">
-                                                    <?= e($score['subject_name']) ?>
-                                                </td>
-                                                <td class="px-4 py-3 whitespace-nowrap text-sm text-center text-slate-gray">
-                                                    <?= $score['ca_score'] !== null ? number_format($ca, 1) : '-' ?>
-                                                </td>
-                                                <td class="px-4 py-3 whitespace-nowrap text-sm text-center text-slate-gray">
-                                                    <?= $score['exam_score'] !== null ? number_format($ex, 1) : '-' ?>
-                                                </td>
-                                                <td class="px-4 py-3 whitespace-nowrap text-sm text-center font-bold text-school-navy">
-                                                    <?= $score['total_score'] !== null ? number_format($tot, 1) : '-' ?>
-                                                </td>
-                                            </tr>
-                                            <?php endforeach; ?>
-                                        </tbody>
-                                        <tfoot class="bg-gray-50 border-t-2 border-gray-300">
-                                            <tr>
-                                                <td colspan="3" class="px-4 py-3 whitespace-nowrap text-right text-sm font-bold text-charcoal uppercase">
-                                                    Overall Average:
-                                                </td>
-                                                <td class="px-4 py-3 whitespace-nowrap text-center font-bold text-lg text-school-blue">
-                                                    <?= $subjectCount > 0 ? number_format($totalOverall / $subjectCount, 1) : '0.0' ?>%
-                                                </td>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
-                                </div>
-                                
-                                <div class="mt-12 flex justify-between border-t border-gray-200 pt-8">
-                                    <div class="text-center">
-                                        <div class="w-48 border-b border-gray-800 mb-2"></div>
-                                        <p class="text-xs text-slate-gray uppercase tracking-wider font-bold">Class Teacher's Signature</p>
-                                    </div>
-                                    <div class="text-center">
-                                        <div class="w-48 border-b border-gray-800 mb-2"></div>
-                                        <p class="text-xs text-slate-gray uppercase tracking-wider font-bold">Principal's Signature</p>
-                                    </div>
-                                </div>
-                                
-                                <div class="mt-8 text-center">
-                                    <button onclick="window.print()" class="bg-gray-200 text-charcoal hover:bg-gray-300 px-6 py-2 rounded text-sm font-medium transition-colors inline-flex items-center">
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                                        Print Result
-                                    </button>
-                                </div>
-                            <?php endif; ?>
+                <div class="md:w-3/4 print-report-column">
+                    <?php if ($report): ?>
+                        <?php require __DIR__ . '/../templates/components/report_card.php'; ?>
+
+                        <div class="mt-6 text-center no-print">
+                            <button type="button" onclick="window.print()" class="bg-gray-200 text-charcoal hover:bg-gray-300 px-6 py-2 rounded text-sm font-medium transition-colors inline-flex items-center">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                                Print Result
+                            </button>
                         </div>
                     <?php else: ?>
                         <div class="bg-paper p-12 rounded-lg shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center">
@@ -222,13 +141,23 @@ require __DIR__ . '/../templates/layouts/app-header.php';
 
 <style>
 @media print {
-    .bg-school-navy, .bg-school-blue, aside, header, .flex-1.flex-col, button, .md\:w-1\/4, nav {
+    aside, header, nav, button, .no-print {
         display: none !important;
     }
-    .flex.h-screen { height: auto !important; display: block !important; overflow: visible !important; }
-    .md\:w-3\/4 { width: 100% !important; margin: 0 !important; }
-    main { padding: 0 !important; overflow: visible !important; background: white !important; }
-    .bg-paper { box-shadow: none !important; border: none !important; padding: 0 !important; }
+    body, .print-layout-root, .print-layout-content, main, .print-layout-row {
+        height: auto !important;
+        min-height: 0 !important;
+        display: block !important;
+        overflow: visible !important;
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    .print-report-column {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+    }
 }
 </style>
 

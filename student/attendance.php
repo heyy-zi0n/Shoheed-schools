@@ -20,7 +20,7 @@ $activeSession = get_active_academic_session();
 $activeTerm = $activeSession ? get_active_term($activeSession['id']) : null;
 
 $attendance = [];
-$stats = ['PRESENT' => 0, 'ABSENT' => 0, 'LATE' => 0, 'EXCUSED' => 0];
+$stats = ['PRESENT' => 0, 'ABSENT' => 0];
 
 if ($activeSession && $activeTerm) {
     $stmt = $pdo->prepare("
@@ -32,8 +32,11 @@ if ($activeSession && $activeTerm) {
     $attendance = $stmt->fetchAll();
     
     foreach ($attendance as $record) {
-        if (isset($stats[$record['status']])) {
-            $stats[$record['status']]++;
+        $stKey = strtoupper($record['status'] ?? '');
+        if ($stKey === 'ABSENT') {
+            $stats['ABSENT']++;
+        } else {
+            $stats['PRESENT']++;
         }
     }
 }
@@ -50,18 +53,10 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                 <p class="text-sm text-slate-gray">Current Term: <?= $activeTerm ? e($activeTerm['name']) : 'None' ?></p>
             </div>
             
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="grid grid-cols-2 gap-4 mb-8">
                 <div class="bg-paper p-4 rounded-lg shadow-sm border border-gray-100 text-center">
                     <p class="text-xs font-bold text-slate-gray uppercase tracking-wider mb-1">Present</p>
                     <p class="text-2xl font-bold text-school-blue"><?= $stats['PRESENT'] ?></p>
-                </div>
-                <div class="bg-paper p-4 rounded-lg shadow-sm border border-gray-100 text-center">
-                    <p class="text-xs font-bold text-slate-gray uppercase tracking-wider mb-1">Late</p>
-                    <p class="text-2xl font-bold text-yellow-600"><?= $stats['LATE'] ?></p>
-                </div>
-                <div class="bg-paper p-4 rounded-lg shadow-sm border border-gray-100 text-center">
-                    <p class="text-xs font-bold text-slate-gray uppercase tracking-wider mb-1">Excused</p>
-                    <p class="text-2xl font-bold text-green-600"><?= $stats['EXCUSED'] ?></p>
                 </div>
                 <div class="bg-paper p-4 rounded-lg shadow-sm border border-gray-100 text-center">
                     <p class="text-xs font-bold text-slate-gray uppercase tracking-wider mb-1">Absent</p>
@@ -86,13 +81,10 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <?php 
-                                        $color = 'bg-gray-100 text-gray-800';
-                                        if ($record['status'] === 'PRESENT') $color = 'bg-blue-100 text-blue-800';
-                                        if ($record['status'] === 'ABSENT') $color = 'bg-red-100 text-red-800';
-                                        if ($record['status'] === 'LATE') $color = 'bg-yellow-100 text-yellow-800';
-                                        if ($record['status'] === 'EXCUSED') $color = 'bg-green-100 text-green-800';
+                                        $stUpper = strtoupper($record['status'] ?? '') === 'ABSENT' ? 'ABSENT' : 'PRESENT';
+                                        $color = $stUpper === 'ABSENT' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800';
                                     ?>
-                                    <span class="px-2 py-1 text-xs font-semibold rounded-full <?= $color ?>"><?= e($record['status']) ?></span>
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full <?= $color ?>"><?= e($stUpper) ?></span>
                                 </td>
                             </tr>
                             <?php endforeach; ?>

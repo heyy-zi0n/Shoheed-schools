@@ -22,13 +22,14 @@ if ($activeSession && $activeTerm) {
     if ($staffId) {
         $stmt = $pdo->prepare("
             SELECT sta.id, c.name as class_name, c.id as class_id, s.name as subject_name, s.id as subject_id,
-                   COALESCE(rb.status, 'NOT_STARTED') as batch_status, rb.id as batch_id
+                   COALESCE(ss.status, 'NOT_STARTED') as batch_status, rb.id as batch_id
             FROM subject_teacher_assignments sta
             JOIN classes c ON sta.class_id = c.id
             JOIN subjects s ON sta.subject_id = s.id
             LEFT JOIN result_batches rb ON rb.class_id = c.id 
                                         AND rb.academic_session_id = sta.academic_session_id 
                                         AND rb.term_id = :term_id
+            LEFT JOIN subject_submissions ss ON ss.result_batch_id = rb.id AND ss.subject_id = s.id
             WHERE sta.staff_id = :staff_id AND sta.academic_session_id = :session_id
             ORDER BY c.level ASC, s.name ASC
         ");

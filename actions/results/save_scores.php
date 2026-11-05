@@ -45,6 +45,24 @@ $activeTerm = $activeSession ? get_active_term($activeSession['id']) : null;
         throw new Exception("You are not authorized to enter scores for this subject and class.");
     }
     
+    // 0. Pre-validate all scores to prevent partial/clamped saves
+    foreach ($scores as $studentId => $data) {
+        $caStr = $data['ca'] ?? '';
+        $exStr = $data['exam'] ?? '';
+        
+        if ($caStr !== '') {
+            if (!is_numeric($caStr)) throw new Exception("CA score must be numeric.");
+            $caVal = (float)$caStr;
+            if ($caVal < 0 || $caVal > 40) throw new Exception("CA score must be between 0 and 40.");
+        }
+        
+        if ($exStr !== '') {
+            if (!is_numeric($exStr)) throw new Exception("Exam score must be numeric.");
+            $exVal = (float)$exStr;
+            if ($exVal < 0 || $exVal > 60) throw new Exception("Exam score must be between 0 and 60.");
+        }
+    }
+    
     $pdo->beginTransaction();
     
     // 1. Get or Create Batch (Class Level)
@@ -102,15 +120,16 @@ $activeTerm = $activeSession ? get_active_term($activeSession['id']) : null;
     $delStmt = $pdo->prepare("DELETE FROM scores WHERE result_batch_id = ? AND subject_id = ?");
     $delStmt->execute([$batchId, $subjectId]);
     
-    $insStmt = $pdo->prepare("INSERT INTO scores (result_batch_id, student_id, subject_id, ca_score, exam_score, total_score, entered_by) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    $insStmt = $pdo->prepare("INSERT INTO scores (result_batch_id, student_id, subject_id, ca_score, exam_score, total_score, grade, remark, entered_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
     
     foreach ($scores as $studentId => $data) {
-        $ca = isset($data['ca']) && $data['ca'] !== '' ? min(40, max(0, (float)$data['ca'])) : null;
-        $ex = isset($data['exam']) && $data['exam'] !== '' ? min(60, max(0, (float)$data['exam'])) : null;
+        $ca = isset($data['ca']) && $data['ca'] !== '' ? (float)$data['ca'] : null;
+        $ex = isset($data['exam']) && $data['exam'] !== '' ? (float)$data['exam'] : null;
         
         if ($ca !== null || $ex !== null) {
             $total = ($ca ?? 0) + ($ex ?? 0);
-            $insStmt->execute([$batchId, $studentId, $subjectId, $ca, $ex, $total, $staffId]);
+            $gradeInfo = calculate_shoheed_grade($total);
+            $insStmt->execute([$batchId, $studentId, $subjectId, $ca, $ex, $total, $gradeInfo['grade'], $gradeInfo['remark'], $staffId]);
         }
     }
     

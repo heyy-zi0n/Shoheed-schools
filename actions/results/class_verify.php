@@ -66,13 +66,18 @@ try {
         throw new Exception("Cannot verify class. All expected subjects must be SUBMITTED.");
     }
     
+    // Get current batch status for history
+    $bStmt = $pdo->prepare("SELECT status FROM result_batches WHERE id = ? FOR UPDATE");
+    $bStmt->execute([$batchId]);
+    $currentBatchStatus = $bStmt->fetchColumn() ?: 'DRAFT';
+
     // Update batch
     $stmt = $pdo->prepare("UPDATE result_batches SET status = 'CLASS_TEACHER_VERIFIED', verified_by = ?, verified_at = NOW() WHERE id = ?");
     $stmt->execute([$staffId, $batchId]);
     
     // Log history
     $histStmt = $pdo->prepare("INSERT INTO result_workflow_history (result_batch_id, user_id, previous_status, new_status, comments) VALUES (?, ?, ?, ?, ?)");
-    $histStmt->execute([$batchId, $userId, 'SUBMITTED', 'CLASS_TEACHER_VERIFIED', "Class teacher verified results."]);
+    $histStmt->execute([$batchId, $userId, $currentBatchStatus, 'CLASS_TEACHER_VERIFIED', "Class teacher verified results."]);
     
     // Notify principals
     $prStmt = $pdo->prepare("SELECT u.id as user_id FROM staff s JOIN users u ON s.user_id = u.id JOIN roles r ON u.role_id = r.id WHERE r.name = ?");

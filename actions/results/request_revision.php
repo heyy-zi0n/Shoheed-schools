@@ -20,7 +20,7 @@ $comments = trim($_POST['comments'] ?? '');
 
 if (!$classId || !$batchId || !$subjectId || empty($comments)) {
     set_flash('error', 'Invalid request parameters.');
-    redirect("teacher/results/class_verification.php?class={$classId}");
+    redirect("teacher/results/review_subject.php?class={$classId}&subject={$subjectId}");
 }
 
 try {
@@ -100,4 +100,4 @@ try {
     set_flash('error', $e->getMessage());
 }
 
-redirect("teacher/results/class_verification.php?class={$classId}");
+redirect("teacher/results/review_subject.php?class={$classId}&subject={$subjectId}");

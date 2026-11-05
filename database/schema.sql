@@ -177,6 +177,11 @@ CREATE TABLE result_batches (
     class_id INT NOT NULL,
     academic_session_id INT NOT NULL,
     term_id INT NOT NULL,
+    term_begins DATE NULL,
+    term_ends DATE NULL,
+    next_term_begins DATE NULL,
+    duration_weeks INT UNSIGNED NULL DEFAULT 14,
+    times_school_opened INT UNSIGNED NULL,
     status ENUM('DRAFT', 'SUBMITTED', 'REVISION_REQUIRED', 'CLASS_TEACHER_VERIFIED', 'PRINCIPAL_APPROVED', 'PUBLISHED') DEFAULT 'DRAFT',
     verified_by INT NULL,
     verified_at DATETIME NULL,
@@ -189,6 +194,37 @@ CREATE TABLE result_batches (
     FOREIGN KEY (term_id) REFERENCES terms(id),
     FOREIGN KEY (verified_by) REFERENCES staff(id) ON DELETE SET NULL,
     FOREIGN KEY (approved_by) REFERENCES staff(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE student_result_evaluations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    result_batch_id INT NOT NULL,
+    student_id INT NOT NULL,
+    times_present INT UNSIGNED NULL,
+    times_absent INT UNSIGNED NULL,
+    obedience TINYINT UNSIGNED NULL,
+    honesty TINYINT UNSIGNED NULL,
+    self_control TINYINT UNSIGNED NULL,
+    self_reliance TINYINT UNSIGNED NULL,
+    use_of_initiative TINYINT UNSIGNED NULL,
+    punctuality TINYINT UNSIGNED NULL,
+    neatness TINYINT UNSIGNED NULL,
+    perseverance TINYINT UNSIGNED NULL,
+    attendance_rating TINYINT UNSIGNED NULL,
+    attentiveness TINYINT UNSIGNED NULL,
+    reading_writing TINYINT UNSIGNED NULL,
+    verbal_comm TINYINT UNSIGNED NULL,
+    sport_game TINYINT UNSIGNED NULL,
+    inquisitiveness TINYINT UNSIGNED NULL,
+    class_teacher_comment VARCHAR(500) NULL,
+    principal_comment VARCHAR(500) NULL,
+    updated_by INT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_batch_student_eval (result_batch_id, student_id),
+    FOREIGN KEY (result_batch_id) REFERENCES result_batches(id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 CREATE TABLE scores (

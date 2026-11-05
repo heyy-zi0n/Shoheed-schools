@@ -173,3 +173,4 @@ require_once dirname(__DIR__) . '/core/auth.php';       // is_logged_in(), curre
 require_once dirname(__DIR__) . '/core/authorization.php'; // require_auth(), require_role()
 require_once dirname(__DIR__) . '/core/teaching.php';      // current_staff_id(), staff_has_subject_assignments(), etc.
 require_once dirname(__DIR__) . '/core/finance.php';       // record_official_payment()
+require_once dirname(__DIR__) . '/core/results.php';       // calculate_shoheed_grade(), get_sdba_categories(), build_student_report_card_data()
