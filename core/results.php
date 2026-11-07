@@ -220,6 +220,26 @@ function build_student_report_card_data(
         return null;
     }
 
+    // 2b. Verify student belongs to this class/session enrollment or has recorded scores in this batch
+    $enrollCheck = $pdo->prepare("
+        SELECT 1 FROM student_enrollments
+        WHERE student_id = :sid AND class_id = :cid AND academic_session_id = :sess
+        UNION
+        SELECT 1 FROM scores
+        WHERE student_id = :sid2 AND result_batch_id = :bid
+        LIMIT 1
+    ");
+    $enrollCheck->execute([
+        'sid'  => $studentId,
+        'cid'  => $classId,
+        'sess' => $sessionId,
+        'sid2' => $studentId,
+        'bid'  => $batch['id'],
+    ]);
+    if (!$enrollCheck->fetchColumn()) {
+        return null;
+    }
+
     // 3. Fetch all terms in this session ordered by id ASC to identify 1st, 2nd, 3rd term and next term
     $termsStmt = $pdo->prepare("SELECT * FROM terms WHERE academic_session_id = ? ORDER BY id ASC");
     $termsStmt->execute([$sessionId]);
@@ -265,6 +285,7 @@ function build_student_report_card_data(
     // 5. If 2nd or 3rd term, fetch previous term scores in the same session for this student
     $firstTermScores = [];
     $secondTermScores = [];
+    $prevStatusClause = $requirePublished ? "AND rb.status = 'PUBLISHED'" : "";
 
     if ($termOrdinal >= 2 && $firstTermId && $firstTermId !== $termId) {
         $ftStmt = $pdo->prepare("
@@ -275,6 +296,7 @@ function build_student_report_card_data(
               AND rb.academic_session_id = :sess
               AND rb.term_id = :tid
               AND rb.class_id = :cid
+              {$prevStatusClause}
         ");
         $ftStmt->execute([
             'sid'  => $studentId,
@@ -301,6 +323,7 @@ function build_student_report_card_data(
               AND rb.academic_session_id = :sess
               AND rb.term_id = :tid
               AND rb.class_id = :cid
+              {$prevStatusClause}
         ");
         $st2Stmt->execute([
             'sid'  => $studentId,
@@ -413,9 +436,23 @@ function build_student_report_card_data(
     $recordedAbsent = $attCounts['ABSENT'];
     $recordedTotal = $recordedPresent + $recordedAbsent + $attCounts['EXCUSED'];
 
-    $timesOpened = max($classDaysOpened, $recordedTotal);
-    $timesPresent = $recordedPresent;
-    $timesAbsent = $recordedAbsent;
+    $timesOpened = ($batch['times_school_opened'] !== null && $batch['times_school_opened'] !== '')
+        ? (int)$batch['times_school_opened']
+        : max($classDaysOpened, $recordedTotal);
+    $timesPresent = (isset($evaluation['times_present']) && $evaluation['times_present'] !== null)
+        ? (int)$evaluation['times_present']
+        : $recordedPresent;
+    $timesAbsent = (isset($evaluation['times_absent']) && $evaluation['times_absent'] !== null)
+        ? (int)$evaluation['times_absent']
+        : $recordedAbsent;
+
+    // 7b. Active class size for this session/class (excludes WITHDRAWN)
+    $csStmt = $pdo->prepare("
+        SELECT COUNT(*) FROM student_enrollments
+        WHERE class_id = ? AND academic_session_id = ? AND status IN ('ACTIVE', 'PROMOTED', 'REPEATED')
+    ");
+    $csStmt->execute([$classId, $sessionId]);
+    $classSize = (int)$csStmt->fetchColumn();
 
     // 8. Resolve SDBA ratings
     $sdbaRatings = [];
@@ -437,6 +474,7 @@ function build_student_report_card_data(
     return [
         'student'                  => $student,
         'batch'                    => $batch,
+        'class_size'               => $classSize,
         'term_meta'                => $termMeta,
         'duration_weeks'           => !empty($batch['duration_weeks']) ? (int)$batch['duration_weeks'] : 14,
         'term_begins'              => $batch['term_begins'] ?: ($batch['term_start'] ?: null),

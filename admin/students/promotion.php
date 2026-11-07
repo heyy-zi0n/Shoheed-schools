@@ -115,8 +115,8 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
             <div class="bg-paper rounded-lg shadow-sm border border-gray-100 p-6 mb-6">
                 <form action="<?= url('admin/students/promotion.php') ?>" method="GET" class="flex flex-wrap gap-4 items-end">
                     <div class="w-full md:w-1/4">
-                        <label class="block text-xs font-bold text-slate-gray uppercase tracking-wider mb-2">Source Session</label>
-                        <select name="source_session_id" required class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-school-blue">
+                        <label for="source_session_id" class="block text-xs font-bold text-slate-gray uppercase tracking-wider mb-2">Source Session</label>
+                        <select id="source_session_id" name="source_session_id" required class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-school-blue">
                             <option value="">Select Session...</option>
                             <?php foreach ($sessions as $s): ?>
                                 <option value="<?= $s['id'] ?>" <?= $s['id'] == $sourceSessionId ? 'selected' : '' ?>><?= e($s['name']) ?></option>
@@ -124,8 +124,8 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                         </select>
                     </div>
                     <div class="w-full md:w-1/4">
-                        <label class="block text-xs font-bold text-slate-gray uppercase tracking-wider mb-2">Source Class</label>
-                        <select name="source_class_id" required class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-school-blue">
+                        <label for="source_class_id" class="block text-xs font-bold text-slate-gray uppercase tracking-wider mb-2">Source Class</label>
+                        <select id="source_class_id" name="source_class_id" required class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-school-blue">
                             <option value="">Select Class...</option>
                             <?php foreach ($classes as $c): ?>
                                 <option value="<?= $c['id'] ?>" <?= $c['id'] == $sourceClassId ? 'selected' : '' ?>><?= e($c['name']) ?></option>
@@ -133,8 +133,8 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                         </select>
                     </div>
                     <div class="w-full md:w-1/4">
-                        <label class="block text-xs font-bold text-slate-gray uppercase tracking-wider mb-2">Target Session (Next)</label>
-                        <select name="target_session_id" required class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-school-blue">
+                        <label for="target_session_id" class="block text-xs font-bold text-slate-gray uppercase tracking-wider mb-2">Target Session (Next)</label>
+                        <select id="target_session_id" name="target_session_id" required class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-school-blue">
                             <option value="">Select Session...</option>
                             <?php foreach ($sessions as $s): ?>
                                 <option value="<?= $s['id'] ?>" <?= $s['id'] == $targetSessionId ? 'selected' : '' ?>><?= e($s['name']) ?></option>
@@ -245,7 +245,7 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                                             </td>
                                             
                                             <td class="px-4 py-3 text-center">
-                                                <select name="action[<?= (int)$student['enrollment_id'] ?>]" class="border border-gray-300 rounded p-1 text-sm">
+                                                <select name="action[<?= (int)$student['enrollment_id'] ?>]" aria-label="Promotion action for <?= e(trim(($student['last_name'] ?? '') . ' ' . ($student['first_name'] ?? ''))) ?>" class="border border-gray-300 rounded p-1 text-sm">
                                                     <?php if ($isIncomplete): ?>
                                                         <option value="skip" selected>Skip (Incomplete)</option>
                                                         <option value="override_promote">Override: Promote</option>

@@ -72,27 +72,33 @@ try {
         throw new Exception("Fee Structure session/term mismatch.");
     }
 
-    // Get new fee items
-    $stmt = $pdo->prepare("SELECT * FROM fee_items WHERE fee_structure_id = ?");
+    // Get active fee items
+    $stmt = $pdo->prepare("SELECT * FROM fee_items WHERE fee_structure_id = ? AND is_active = 1");
     $stmt->execute([$structure['id']]);
     $feeItems = $stmt->fetchAll();
 
     if (empty($feeItems)) {
-        throw new Exception("Fee Structure has no items.");
+        throw new Exception("Fee Structure has no active items.");
     }
 
-    // Save old total for audit
-    $oldTotal = $invoice['total_amount'];
-    $newTotal = $structure['total_amount'];
+    // Save old total for audit and compute authoritative active total
+    $oldTotal = (float)$invoice['total_amount'];
+    $newTotal = 0.0;
+    foreach ($feeItems as $fi) {
+        $newTotal += (float)$fi['amount'];
+    }
 
     // Delete existing invoice items
     $stmt = $pdo->prepare("DELETE FROM invoice_items WHERE student_invoice_id = ?");
     $stmt->execute([$invoiceId]);
 
-    // Insert new invoice items
-    $insertItemStmt = $pdo->prepare("INSERT INTO invoice_items (student_invoice_id, name, amount) VALUES (?, ?, ?)");
+    // Insert new invoice items preserving source_fee_item_id to prevent double-billing
+    $insertItemStmt = $pdo->prepare("
+        INSERT INTO invoice_items (student_invoice_id, source_fee_item_id, name, amount)
+        VALUES (?, ?, ?, ?)
+    ");
     foreach ($feeItems as $item) {
-        $insertItemStmt->execute([$invoiceId, $item['name'], $item['amount']]);
+        $insertItemStmt->execute([$invoiceId, $item['id'], $item['name'], $item['amount']]);
     }
 
     // Update invoice total

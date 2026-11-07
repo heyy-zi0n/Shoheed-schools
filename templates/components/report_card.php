@@ -171,8 +171,8 @@ $fullName = strtoupper(trim(
             <table class="w-full report-grid-table text-xs">
                 <thead>
                     <tr class="font-bold text-center">
-                        <th class="w-2/5 text-left"></th>
-                        <th class="w-16"><?= e($termMeta['short']) ?><br>C.A</th>
+                        <th scope="col" class="w-2/5 text-left">Subject</th>
+                        <th scope="col" class="w-16"><?= e($termMeta['short']) ?><br>C.A</th>
                         <th class="w-16"><?= e($termMeta['short']) ?><br>Exam</th>
                         <?php if ($report['show_first_term_column'] && $report['show_second_term_column']): ?>
                             <th class="w-16"><?= e($termMeta['short']) ?><br>Scores</th>

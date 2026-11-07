@@ -107,3 +107,64 @@ function enforce_session_timeout(): void {
     // Refresh last activity
     $_SESSION['last_activity_at'] = $now;
 }
+
+/**
+ * Re-verify the logged-in user's account status, role, and linked staff/student status
+ * against the database once per request so deactivated or re-roled accounts are immediately enforced.
+ */
+function verify_active_session_account(): void {
+    static $verifiedThisRequest = false;
+    if ($verifiedThisRequest || !is_logged_in()) {
+        return;
+    }
+    $verifiedThisRequest = true;
+
+    $userId = current_user_id();
+    if (!$userId) {
+        return;
+    }
+
+    try {
+        $pdo = get_db_connection();
+        $stmt = $pdo->prepare("
+            SELECT u.status AS user_status,
+                   r.name AS role_name,
+                   st.id AS staff_id,
+                   st.status AS staff_status,
+                   stu.id AS student_id,
+                   stu.status AS student_status
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            LEFT JOIN staff st ON st.user_id = u.id
+            LEFT JOIN students stu ON stu.user_id = u.id
+            WHERE u.id = :uid
+            LIMIT 1
+        ");
+        $stmt->execute(['uid' => $userId]);
+        $row = $stmt->fetch();
+
+        $isActive = true;
+        if (!$row || ($row['user_status'] ?? '') !== 'ACTIVE') {
+            $isActive = false;
+        } elseif (!empty($row['staff_id']) && ($row['staff_status'] ?? 'ACTIVE') !== 'ACTIVE') {
+            $isActive = false;
+        } elseif (($row['role_name'] ?? '') === ROLE_STUDENT && ($row['student_status'] ?? '') !== 'ACTIVE') {
+            $isActive = false;
+        } elseif (($row['role_name'] ?? '') === ROLE_PARENT) {
+            $isActive = false;
+        }
+
+        if (!$isActive) {
+            logout_user();
+            session_start();
+            session_regenerate_id(true);
+            set_flash('error', 'Your account is no longer active. Please contact the administrator.');
+            redirect('login.php');
+        }
+
+        // Keep session role synchronized with database role
+        $_SESSION['role_name'] = $row['role_name'];
+    } catch (Throwable $e) {
+        error_log('Session account verification failed: ' . $e->getMessage());
+    }
+}

@@ -14,11 +14,12 @@ if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
 }
 
 $classId = filter_var($_POST['class_id'] ?? null, FILTER_VALIDATE_INT);
-$attendanceDate = filter_var($_POST['attendance_date'] ?? null, FILTER_SANITIZE_STRING);
+$attendanceDate = trim((string)($_POST['attendance_date'] ?? ''));
+$parsedDate = $attendanceDate !== '' ? DateTime::createFromFormat('Y-m-d', $attendanceDate) : false;
 $attendance = $_POST['attendance'] ?? []; // array of student_id => status
 
-if (!$classId || !$attendanceDate) {
-    set_flash('error', 'Invalid request parameters.');
+if (!$classId || !$parsedDate || $parsedDate->format('Y-m-d') !== $attendanceDate) {
+    set_flash('error', 'Invalid class or attendance date format (expected YYYY-MM-DD).');
     redirect('teacher/dashboard.php');
 }
 
@@ -43,6 +44,10 @@ try {
         throw new Exception("You are not authorized to record attendance for this class.");
     }
     
+    $enrolledStmt = $pdo->prepare("SELECT student_id FROM student_enrollments WHERE class_id = ? AND academic_session_id = ? AND status = 'ACTIVE'");
+    $enrolledStmt->execute([$classId, $activeSession['id']]);
+    $enrolledMap = array_flip($enrolledStmt->fetchAll(PDO::FETCH_COLUMN));
+
     $pdo->beginTransaction();
     
     // Using INSERT ON DUPLICATE KEY UPDATE to prevent duplicate rows for the same student/date/session
@@ -52,13 +57,17 @@ try {
         ON DUPLICATE KEY UPDATE term_id = VALUES(term_id), class_id = VALUES(class_id), status = VALUES(status), recorded_by = VALUES(recorded_by)
     ");
     
-    $validStatuses = ['PRESENT', 'ABSENT'];
+    $validStatuses = ['PRESENT', 'ABSENT', 'LATE', 'EXCUSED'];
     
     foreach ($attendance as $studentId => $status) {
+        $studentIdInt = filter_var($studentId, FILTER_VALIDATE_INT);
+        if (!$studentIdInt || !isset($enrolledMap[$studentIdInt])) {
+            continue;
+        }
         $statusUpper = strtoupper(trim((string)$status));
         if (in_array($statusUpper, $validStatuses, true)) {
             $stmt->execute([
-                (int)$studentId,
+                $studentIdInt,
                 $classId,
                 $activeSession['id'],
                 $activeTerm['id'],

@@ -107,6 +107,8 @@ Agents.md
 Gemini.md
 UI.md
 Master-Prompt.md
+PROJECT_AUDIT_REPORT.md
+REMEDIATION_REPORT.md
 
 # =========================================================
 # LOCAL NOTES / BACKUPS
@@ -116,10 +118,17 @@ Master-Prompt.md
 *.swp
 *.swo
 *~
+scratch/
+test_*.php
 # Runtime uploads
 /storage/payment_proofs/*
 !/storage/payment_proofs/.gitkeep
+!/storage/payment_proofs/.htaccess
 
 # Other protected runtime uploads where applicable
 /storage/profiles/*
 !/storage/profiles/.gitkeep
+!/storage/profiles/.htaccess
+/storage/staff_profiles/*
+!/storage/staff_profiles/.gitkeep
+!/storage/staff_profiles/.htaccess

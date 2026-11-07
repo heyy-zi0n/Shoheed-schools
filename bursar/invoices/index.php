@@ -7,11 +7,23 @@ $pageTitle = 'Student Invoices';
 $pdo = get_db_connection();
 
 $activeSession = get_active_academic_session();
-$activeSession = get_active_academic_session();
 $activeTerm = $activeSession ? get_active_term($activeSession['id']) : null;
+$statusFilter = strtolower(trim($_GET['status'] ?? 'all'));
 
 $invoices = [];
 if ($activeSession && $activeTerm) {
+    $statusWhere = '';
+    $params = [
+        'session_id' => $activeSession['id'],
+        'term_id' => $activeTerm['id']
+    ];
+    if ($statusFilter === 'outstanding') {
+        $statusWhere = " AND si.status IN ('PENDING', 'PARTIAL')";
+    } elseif (in_array(strtoupper($statusFilter), ['PENDING', 'PARTIAL', 'PAID'], true)) {
+        $statusWhere = " AND si.status = :status_filter";
+        $params['status_filter'] = strtoupper($statusFilter);
+    }
+
     $stmt = $pdo->prepare("
         SELECT si.*, s.first_name, s.last_name, s.admission_number, c.name as class_name,
                fs.total_amount as fee_structure_total,
@@ -21,13 +33,10 @@ if ($activeSession && $activeTerm) {
         JOIN students s ON si.student_id = s.id
         JOIN fee_structures fs ON si.fee_structure_id = fs.id
         JOIN classes c ON fs.class_id = c.id
-        WHERE si.academic_session_id = :session_id AND si.term_id = :term_id
+        WHERE si.academic_session_id = :session_id AND si.term_id = :term_id{$statusWhere}
         ORDER BY si.status ASC, s.last_name ASC
     ");
-    $stmt->execute([
-        'session_id' => $activeSession['id'],
-        'term_id' => $activeTerm['id']
-    ]);
+    $stmt->execute($params);
     $invoices = $stmt->fetchAll();
 }
 
@@ -40,7 +49,7 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
         <main class="flex-1 overflow-x-hidden overflow-y-auto bg-ivory p-6">
             <?php require __DIR__ . '/../../templates/components/alert.php'; ?>
 
-            <div class="mb-8 flex justify-between items-center">
+            <div class="mb-6 flex flex-wrap justify-between items-center gap-4">
                 <div>
                     <h1 class="text-2xl font-serif font-bold text-school-navy">Student Invoices</h1>
                     <p class="text-sm text-slate-gray">
@@ -49,8 +58,27 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                     </p>
                 </div>
                 <div>
-                    <button class="bg-school-blue text-white px-4 py-2 rounded font-medium text-sm hover:bg-school-navy transition-colors shadow-sm">Generate Invoices</button>
+                    <a href="<?= url('admin/finance/generate_invoices.php') ?>" class="bg-school-blue text-white px-4 py-2 rounded font-medium text-sm hover:bg-school-navy transition-colors shadow-sm inline-block">Generate Invoices</a>
                 </div>
+            </div>
+
+            <div class="mb-4 flex flex-wrap gap-2">
+                <?php
+                $filters = [
+                    'all' => 'All Invoices',
+                    'outstanding' => 'Outstanding',
+                    'pending' => 'Pending',
+                    'partial' => 'Partial',
+                    'paid' => 'Paid',
+                ];
+                foreach ($filters as $fKey => $fLabel):
+                    $activePill = ($statusFilter === $fKey);
+                ?>
+                    <a href="<?= url('bursar/invoices/index.php' . ($fKey === 'all' ? '' : '?status=' . $fKey)) ?>"
+                       class="px-3 py-1.5 rounded-full text-xs font-semibold transition-colors <?= $activePill ? 'bg-school-navy text-white' : 'bg-white text-charcoal border border-gray-200 hover:bg-gray-50' ?>">
+                        <?= e($fLabel) ?>
+                    </a>
+                <?php endforeach; ?>
             </div>
 
             <div class="bg-paper p-6 rounded-lg shadow-sm border border-gray-100">

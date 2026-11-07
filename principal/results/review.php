@@ -29,7 +29,7 @@ if (!$batch) {
 $classId = (int)$batch['class_id'];
 $sessionId = (int)$batch['academic_session_id'];
 $batchStatus = $batch['status'];
-$isEditable = ($batchStatus !== 'PUBLISHED');
+$isEditable = in_array($batchStatus, ['CLASS_TEACHER_VERIFIED', 'PRINCIPAL_APPROVED'], true);
 
 // Fetch enrolled students in this class/session
 $stuStmt = $pdo->prepare("
@@ -190,8 +190,9 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                                     <div class="text-school-blue font-semibold"><?= number_format($avg, 1) ?>%</div>
                                 </td>
                                 <td class="px-4 py-3">
-                                    <label for="tc_<?= $sid ?>" class="sr-only">Class Teacher Comment</label>
-                                    <input type="text" id="tc_<?= $sid ?>" name="evaluations[<?= $sid ?>][class_teacher_comment]" maxlength="500" value="<?= e($ev['class_teacher_comment'] ?? '') ?>" placeholder="<?= e($defaultTeacher) ?>" <?= !$isEditable ? 'disabled' : '' ?> class="w-full border border-gray-300 rounded px-2.5 py-1.5 text-xs">
+                                    <div class="text-xs text-charcoal bg-gray-50 border border-gray-200 rounded px-2.5 py-1.5">
+                                        <?= e(($ev['class_teacher_comment'] ?? '') !== '' ? $ev['class_teacher_comment'] : $defaultTeacher) ?>
+                                    </div>
                                 </td>
                                 <td class="px-4 py-3">
                                     <label for="pc_<?= $sid ?>" class="sr-only">Principal Comment</label>

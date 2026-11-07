@@ -3,10 +3,13 @@
  * Run migration 008: V1 Completion schema changes.
  * Usage: C:\xampp\php\php.exe database/migrate_008.php
  */
-require_once __DIR__ . '/../config/database.php';
-$config = require __DIR__ . '/../config/database.php';
-$dsn = "mysql:host={$config['host']};port={$config['port']};dbname={$config['name']};charset={$config['charset']}";
-$pdo = new PDO($dsn, $config['user'], $config['pass'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    exit('Forbidden: This script may only be executed from the command line.');
+}
+
+require_once __DIR__ . '/../config/bootstrap.php';
+$pdo = get_db_connection();
 
 // 1. fee_structures.is_active
 try {
@@ -61,15 +64,11 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS subject_submissions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     result_batch_id INT NOT NULL,
     subject_id INT NOT NULL,
-    staff_id INT NOT NULL,
-    status ENUM('PENDING','SUBMITTED','REVISION_REQUIRED') NOT NULL DEFAULT 'PENDING',
-    revision_comment TEXT NULL,
-    submitted_at DATETIME NULL,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    status ENUM('DRAFT','SUBMITTED','REVISION_REQUIRED') DEFAULT 'DRAFT',
+    comments TEXT NULL,
     UNIQUE KEY uq_batch_subject (result_batch_id, subject_id),
     FOREIGN KEY (result_batch_id) REFERENCES result_batches(id) ON DELETE CASCADE,
-    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
-    FOREIGN KEY (staff_id) REFERENCES staff(id) ON DELETE CASCADE
+    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
 ) ENGINE=InnoDB");
 echo "subject_submissions table ready\n";
 

@@ -7,7 +7,8 @@ $pdo = get_db_connection();
 
 $activeSession = get_active_academic_session();
 if (!$activeSession) {
-    die("No active session found.");
+    set_flash('error', 'No active academic session is configured.');
+    redirect('principal/dashboard.php');
 }
 
 // Fetch all classes
@@ -79,7 +80,7 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                                 <form action="<?= url('actions/assignments/assign_class_teacher.php') ?>" method="POST" class="flex items-center justify-end gap-2">
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="class_id" value="<?= $class['id'] ?>">
-                                    <select name="staff_id" class="border border-gray-300 rounded p-1 text-sm focus:ring-school-blue focus:border-school-blue">
+                                    <select name="staff_id" aria-label="Select Class Teacher for <?= e($class['name']) ?>" class="border border-gray-300 rounded p-1 text-sm focus:ring-school-blue focus:border-school-blue">
                                         <option value="">-- Select Teacher --</option>
                                         <?php foreach ($staff as $st): ?>
                                             <?php

@@ -23,25 +23,48 @@ if (!empty($errors)) {
 
 try {
     $pdo = get_db_connection();
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
 
     // Probabilistic Garbage Collection for stale rate limits (1% chance)
     if (random_int(1, 100) === 1) {
         $pdo->exec("DELETE FROM login_attempts WHERE last_failed_at < DATE_SUB(NOW(), INTERVAL 24 HOUR)");
     }
 
-    // Rate Limiting (Database Persistent)
-    $lockStmt = $pdo->prepare("SELECT failed_attempts, locked_until FROM login_attempts WHERE username = :uname");
+    // Rate Limiting (Database Persistent — checks both username lock and per-IP burst)
+    $lockStmt = $pdo->prepare("SELECT failed_attempts, locked_until FROM login_attempts WHERE username = :uname LIMIT 1");
     $lockStmt->execute(['uname' => $username]);
     $attemptRecord = $lockStmt->fetch();
 
-    if ($attemptRecord && $attemptRecord['locked_until']) {
+    if ($attemptRecord && !empty($attemptRecord['locked_until'])) {
         if (strtotime($attemptRecord['locked_until']) > time()) {
             set_flash('error', 'Too many unsuccessful login attempts. Please try again later.');
             redirect('login.php');
         }
     }
 
-    $stmt = $pdo->prepare("SELECT u.*, r.name as role_name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.username = :username LIMIT 1");
+    $ipLockStmt = $pdo->prepare("
+        SELECT COALESCE(SUM(failed_attempts), 0)
+        FROM login_attempts
+        WHERE ip_address = :ip
+          AND last_failed_at > DATE_SUB(NOW(), INTERVAL 15 MINUTE)
+    ");
+    $ipLockStmt->execute(['ip' => $ip]);
+    if ((int)$ipLockStmt->fetchColumn() >= 10) {
+        set_flash('error', 'Too many unsuccessful login attempts from your network. Please try again in 15 minutes.');
+        redirect('login.php');
+    }
+
+    $stmt = $pdo->prepare("
+        SELECT u.*, r.name AS role_name,
+               st.id AS staff_id, st.status AS staff_status,
+               stu.id AS student_id, stu.status AS student_status
+        FROM users u
+        JOIN roles r ON u.role_id = r.id
+        LEFT JOIN staff st ON st.user_id = u.id
+        LEFT JOIN students stu ON stu.user_id = u.id
+        WHERE u.username = :username
+        LIMIT 1
+    ");
     $stmt->execute(['username' => $username]);
     $user = $stmt->fetch();
 
@@ -56,7 +79,17 @@ try {
             redirect('login.php');
         }
 
-        login_user($user['id'], $user['role_name']);
+        if (!empty($user['staff_id']) && ($user['staff_status'] ?? 'ACTIVE') !== 'ACTIVE') {
+            set_flash('error', 'Your staff profile is currently inactive. Please contact the administrator.');
+            redirect('login.php');
+        }
+
+        if ($user['role_name'] === ROLE_STUDENT && ($user['student_status'] ?? '') !== 'ACTIVE') {
+            set_flash('error', 'Your student profile is not active. Please contact the school administration.');
+            redirect('login.php');
+        }
+
+        login_user((int)$user['id'], $user['role_name']);
 
         $pdo->prepare("DELETE FROM login_attempts WHERE username = :uname")->execute(['uname' => $username]);
 
@@ -71,22 +104,21 @@ try {
             'type' => 'user',
             'eid' => $user['id'],
             'desc' => "User {$username} logged in successfully.",
-            'ip' => $_SERVER['REMOTE_ADDR'] ?? null
+            'ip' => $ip
         ]);
 
         $role = $user['role_name'];
         header('Location: ' . get_dashboard_url_for_role($role));
         exit;
     } else {
-        $ip = $_SERVER['REMOTE_ADDR'] ?? null;
         $failStmt = $pdo->prepare("
-            INSERT INTO login_attempts (username, ip_address, failed_attempts, last_failed_at)
-            VALUES (:uname, :ip, 1, NOW())
+            INSERT INTO login_attempts (username, ip_address, failed_attempts, last_failed_at, locked_until)
+            VALUES (:uname, :ip, 1, NOW(), NULL)
             ON DUPLICATE KEY UPDATE
                 ip_address = VALUES(ip_address),
-                failed_attempts = failed_attempts + 1,
+                failed_attempts = IF(last_failed_at < DATE_SUB(NOW(), INTERVAL 15 MINUTE), 1, failed_attempts + 1),
                 last_failed_at = NOW(),
-                locked_until = IF(failed_attempts >= 5, DATE_ADD(NOW(), INTERVAL 5 MINUTE), locked_until)
+                locked_until = IF(failed_attempts >= 5, DATE_ADD(NOW(), INTERVAL 15 MINUTE), NULL)
         ");
         $failStmt->execute(['uname' => $username, 'ip' => $ip]);
 

@@ -12,7 +12,8 @@ $stmt->execute(['uid' => $userId]);
 $student = $stmt->fetch();
 
 if (!$student) {
-    die("Student profile not found.");
+    set_flash('error', 'Student profile not found.');
+    redirect('student/dashboard.php');
 }
 
 // 1. Get Invoices & Summary
@@ -227,8 +228,9 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                                             <option value="">-- Select Invoice --</option>
                                             <?php foreach ($payableInvoices as $inv): ?>
                                                 <?php
+                                                    $itemNamesStr = (string)($inv['item_names'] ?? '');
                                                     $title = $inv['invoice_type'] === 'SUPPLEMENTARY'
-                                                        ? "Supplementary Fees (" . substr($inv['item_names'], 0, 30) . (strlen($inv['item_names']) > 30 ? '...' : '') . ")"
+                                                        ? "Supplementary Fees (" . substr($itemNamesStr, 0, 30) . (strlen($itemNamesStr) > 30 ? '...' : '') . ")"
                                                         : "Standard School Fees";
                                                 ?>
                                                 <option value="<?= $inv['id'] ?>"><?= e($inv['term_name']) ?> <?= e($title) ?> (Outstanding: ₦<?= number_format($inv['total_amount'] - $inv['amount_paid'], 2) ?>)</option>

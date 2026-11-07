@@ -70,23 +70,6 @@ try {
     $skipped = 0;
     $failed = 0;
 
-    // Check for existing invoices using the composite unique key logic
-    $checkStmt = $pdo->prepare("
-        SELECT id FROM student_invoices
-        WHERE student_id = ?
-          AND academic_session_id = ?
-          AND term_id = ?
-          AND fee_structure_id = ?
-    ");
-
-    $billedItemsStmt = $pdo->prepare("
-        SELECT ii.source_fee_item_id
-        FROM invoice_items ii
-        JOIN student_invoices si ON ii.student_invoice_id = si.id
-        WHERE si.student_id = ? AND si.academic_session_id = ? AND si.term_id = ? AND si.fee_structure_id = ?
-        AND ii.source_fee_item_id IS NOT NULL
-    ");
-
     $insertInvoiceStmt = $pdo->prepare("
         INSERT INTO student_invoices (student_id, academic_session_id, term_id, fee_structure_id, total_amount, status, due_date, invoice_type)
         VALUES (?, ?, ?, ?, ?, 'PENDING', ?, ?)
@@ -97,40 +80,72 @@ try {
         VALUES (?, ?, ?, ?)
     ");
 
-    $studentLockStmt = $pdo->prepare("SELECT id FROM students WHERE id = ? FOR UPDATE");
-
     $pdo->beginTransaction();
+
+    // Lock all eligible students in a single batch query to prevent concurrent double-billing
+    $stuPlaceholders = implode(',', array_fill(0, count($students), '?'));
+    $batchLockStmt = $pdo->prepare("SELECT id FROM students WHERE id IN ({$stuPlaceholders}) FOR UPDATE");
+    $batchLockStmt->execute($students);
+
+    // Pre-fetch existing invoices for this session/term/structure across all eligible students (1 query instead of N)
+    $existingInvStmt = $pdo->prepare("
+        SELECT DISTINCT student_id
+        FROM student_invoices
+        WHERE academic_session_id = ?
+          AND term_id = ?
+          AND fee_structure_id = ?
+          AND student_id IN ({$stuPlaceholders})
+    ");
+    $existingInvStmt->execute(array_merge(
+        [$structure['academic_session_id'], $structure['term_id'], $structureId],
+        $students
+    ));
+    $studentsWithInvoices = array_flip($existingInvStmt->fetchAll(PDO::FETCH_COLUMN));
+
+    // Pre-fetch already-billed fee item IDs per student (1 query instead of N)
+    $billedBatchStmt = $pdo->prepare("
+        SELECT si.student_id, ii.source_fee_item_id
+        FROM invoice_items ii
+        JOIN student_invoices si ON ii.student_invoice_id = si.id
+        WHERE si.academic_session_id = ?
+          AND si.term_id = ?
+          AND si.fee_structure_id = ?
+          AND ii.source_fee_item_id IS NOT NULL
+          AND si.student_id IN ({$stuPlaceholders})
+    ");
+    $billedBatchStmt->execute(array_merge(
+        [$structure['academic_session_id'], $structure['term_id'], $structureId],
+        $students
+    ));
+    $billedByStudent = [];
+    foreach ($billedBatchStmt->fetchAll() as $bRow) {
+        $billedByStudent[(int)$bRow['student_id']][(int)$bRow['source_fee_item_id']] = true;
+    }
 
     foreach ($students as $studentId) {
         try {
-            // Obtain a stable lock for this student to prevent concurrent double-billing
-            $studentLockStmt->execute([$studentId]);
-
-            $billedItemsStmt->execute([$studentId, $structure['academic_session_id'], $structure['term_id'], $structureId]);
-            $billedIds = $billedItemsStmt->fetchAll(PDO::FETCH_COLUMN);
+            $sid = (int)$studentId;
+            $billedMap = $billedByStudent[$sid] ?? [];
 
             $unbilledItems = [];
             $unbilledTotal = 0;
             foreach ($items as $item) {
-                if (!in_array($item['id'], $billedIds)) {
+                if (!isset($billedMap[(int)$item['id']])) {
                     $unbilledItems[] = $item;
                     $unbilledTotal += $item['amount'];
                 }
             }
-
-            $checkStmt->execute([$studentId, $structure['academic_session_id'], $structure['term_id'], $structureId]);
-            $hasAnyInvoice = $checkStmt->fetch();
 
             if (empty($unbilledItems)) {
                 $skipped++;
                 continue;
             }
 
-            $invoiceType = $hasAnyInvoice ? 'SUPPLEMENTARY' : 'STANDARD';
+            $invoiceType = isset($studentsWithInvoices[$sid]) ? 'SUPPLEMENTARY' : 'STANDARD';
 
             $due = empty($dueDate) ? null : $dueDate;
             $insertInvoiceStmt->execute([
-                $studentId,
+                $sid,
                 $structure['academic_session_id'],
                 $structure['term_id'],
                 $structureId,

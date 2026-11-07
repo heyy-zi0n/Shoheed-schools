@@ -20,20 +20,26 @@ $pageTitle = 'Enter Scores';
 $pdo = get_db_connection();
 
 $activeSession = get_active_academic_session();
-$activeSession = get_active_academic_session();
 $activeTerm = $activeSession ? get_active_term($activeSession['id']) : null;
 
 if (!$activeSession || !$activeTerm) {
+    set_flash('error', 'No active academic session or term is configured.');
     redirect('teacher/results/index.php');
 }
 
 // Verify assignment
 if (!staff_can_access_subject_assignment($staffId, $classId, $subjectId, $activeSession['id'])) {
-    die('Unauthorized access to this subject.');
+    set_flash('error', 'Unauthorized access to this subject.');
+    redirect('teacher/results/index.php');
 }
 
-$className = $pdo->query("SELECT name FROM classes WHERE id = " . (int)$classId)->fetchColumn();
-$subjectName = $pdo->query("SELECT name FROM subjects WHERE id = " . (int)$subjectId)->fetchColumn();
+$classStmt = $pdo->prepare("SELECT name FROM classes WHERE id = ?");
+$classStmt->execute([$classId]);
+$className = $classStmt->fetchColumn();
+
+$subjectStmt = $pdo->prepare("SELECT name FROM subjects WHERE id = ?");
+$subjectStmt->execute([$subjectId]);
+$subjectName = $subjectStmt->fetchColumn();
 
 // Get students enrolled in this class
 $stmt = $pdo->prepare("
@@ -120,7 +126,7 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                     <input type="hidden" name="class_id" value="<?= $classId ?>">
                     <input type="hidden" name="subject_id" value="<?= $subjectId ?>">
                     
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto" role="region" aria-label="Student score entry table" tabindex="0">
                         <table class="min-w-full divide-y divide-gray-200 border border-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
@@ -137,6 +143,7 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                                     $ca = $score ? $score['ca_score'] : '';
                                     $ex = $score ? $score['exam_score'] : '';
                                     $tot = $score ? $score['total_score'] : '';
+                                    $studentLabel = trim($student['last_name'] . ' ' . $student['first_name']);
                                 ?>
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-6 py-4 whitespace-nowrap">
@@ -144,10 +151,10 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                                         <div class="text-xs text-slate-gray"><?= e($student['admission_number']) ?></div>
                                     </td>
                                     <td class="px-4 py-4 whitespace-nowrap text-center">
-                                        <input type="number" step="0.01" min="0" max="40" name="scores[<?= $sid ?>][ca]" value="<?= e($ca) ?>" <?= $readonly ? 'disabled' : '' ?> class="score-input w-20 text-center border-gray-300 rounded-md shadow-sm focus:ring-school-blue focus:border-school-blue sm:text-sm" oninput="calculateTotal(<?= $sid ?>)">
+                                        <input type="number" step="0.01" min="0" max="40" name="scores[<?= $sid ?>][ca]" aria-label="CA Score for <?= e($studentLabel) ?>" value="<?= e($ca) ?>" <?= $readonly ? 'disabled' : '' ?> class="score-input w-20 text-center border-gray-300 rounded-md shadow-sm focus:ring-school-blue focus:border-school-blue sm:text-sm" oninput="calculateTotal(<?= $sid ?>)">
                                     </td>
                                     <td class="px-4 py-4 whitespace-nowrap text-center">
-                                        <input type="number" step="0.01" min="0" max="60" name="scores[<?= $sid ?>][exam]" value="<?= e($ex) ?>" <?= $readonly ? 'disabled' : '' ?> class="score-input w-20 text-center border-gray-300 rounded-md shadow-sm focus:ring-school-blue focus:border-school-blue sm:text-sm" oninput="calculateTotal(<?= $sid ?>)">
+                                        <input type="number" step="0.01" min="0" max="60" name="scores[<?= $sid ?>][exam]" aria-label="Exam Score for <?= e($studentLabel) ?>" value="<?= e($ex) ?>" <?= $readonly ? 'disabled' : '' ?> class="score-input w-20 text-center border-gray-300 rounded-md shadow-sm focus:ring-school-blue focus:border-school-blue sm:text-sm" oninput="calculateTotal(<?= $sid ?>)">
                                     </td>
                                     <td class="px-4 py-4 whitespace-nowrap text-center font-bold text-school-navy" id="total_<?= $sid ?>">
                                         <?= e($tot) ?>
@@ -165,8 +172,9 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                     
                     <?php if (!$readonly && !empty($students)): ?>
                     <div class="mt-6 flex justify-between items-center bg-gray-50 p-4 border border-gray-200 rounded-md">
-                        <div>
-                            <select name="action_type" class="border-gray-300 rounded-md shadow-sm focus:ring-school-blue focus:border-school-blue sm:text-sm">
+                        <div class="flex items-center space-x-2">
+                            <label for="action_type" class="sr-only">Submission Action</label>
+                            <select id="action_type" name="action_type" aria-label="Submission Action" class="border-gray-300 rounded-md shadow-sm focus:ring-school-blue focus:border-school-blue sm:text-sm">
                                 <option value="save_draft">Save Draft</option>
                                 <option value="submit">Submit to Class Teacher</option>
                             </select>

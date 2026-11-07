@@ -122,6 +122,13 @@ set_exception_handler(function (Throwable $e): void {
 
 date_default_timezone_set($_app_config['timezone'] ?? 'Africa/Lagos');
 
+// Emit baseline HTTP security headers for web responses
+if (PHP_SAPI !== 'cli' && !headers_sent()) {
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: SAMEORIGIN');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+}
+
 // ─── 2. Constants (roles, result states, attendance, invoice, session config) ───
 require_once __DIR__ . '/constants.php';
 
@@ -168,9 +175,9 @@ require_once dirname(__DIR__) . '/core/upload.php';     // handle_profile_upload
 // ─── 10. Authentication ───────────────────────────────────────────────────────
 require_once dirname(__DIR__) . '/core/auth.php';       // is_logged_in(), current_user_id(), login_user(), etc.
 
-// ─── 11. Authorization ────────────────────────────────────────────────────────
-require_once dirname(__DIR__) . '/core/auth.php';       // is_logged_in(), current_user_id(), login_user(), etc.
+// ─── 11. Authorization & Domain Services ──────────────────────────────────────
 require_once dirname(__DIR__) . '/core/authorization.php'; // require_auth(), require_role()
 require_once dirname(__DIR__) . '/core/teaching.php';      // current_staff_id(), staff_has_subject_assignments(), etc.
 require_once dirname(__DIR__) . '/core/finance.php';       // record_official_payment()
 require_once dirname(__DIR__) . '/core/results.php';       // calculate_shoheed_grade(), get_sdba_categories(), build_student_report_card_data()
+require_once dirname(__DIR__) . '/core/students.php';      // query_student_directory()

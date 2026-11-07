@@ -14,7 +14,6 @@ $pdo = get_db_connection();
 
 // Get active session and term
 $activeSession = get_active_academic_session();
-$activeSession = get_active_academic_session();
 $activeTerm = $activeSession ? get_active_term($activeSession['id']) : null;
 
 $assignments = [];
@@ -22,7 +21,9 @@ if ($activeSession && $activeTerm) {
     if ($staffId) {
         $stmt = $pdo->prepare("
             SELECT sta.id, c.name as class_name, c.id as class_id, s.name as subject_name, s.id as subject_id,
-                   COALESCE(ss.status, 'NOT_STARTED') as batch_status, rb.id as batch_id
+                   COALESCE(ss.status, 'NOT_STARTED') as subject_status,
+                   rb.status as parent_batch_status,
+                   rb.id as batch_id
             FROM subject_teacher_assignments sta
             JOIN classes c ON sta.class_id = c.id
             JOIN subjects s ON sta.subject_id = s.id
@@ -80,13 +81,17 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                             
                             <div class="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
                                 <?php 
+                                    $parentStatus = $assignment['parent_batch_status'] ?? null;
+                                    $effectiveStatus = in_array($parentStatus, ['CLASS_TEACHER_VERIFIED', 'PRINCIPAL_APPROVED', 'PUBLISHED'], true)
+                                        ? $parentStatus
+                                        : ($assignment['subject_status'] ?? 'NOT_STARTED');
                                     $statusColor = 'bg-gray-100 text-gray-800';
-                                    if ($assignment['batch_status'] === 'DRAFT') $statusColor = 'bg-yellow-100 text-yellow-800';
-                                    if ($assignment['batch_status'] === 'SUBMITTED') $statusColor = 'bg-blue-100 text-blue-800';
-                                    if ($assignment['batch_status'] === 'PUBLISHED' || strpos($assignment['batch_status'], 'APPROVED') !== false) $statusColor = 'bg-sage text-white';
+                                    if ($effectiveStatus === 'DRAFT' || $effectiveStatus === 'REVISION_REQUIRED') $statusColor = 'bg-yellow-100 text-yellow-800';
+                                    if ($effectiveStatus === 'SUBMITTED') $statusColor = 'bg-blue-100 text-blue-800';
+                                    if (in_array($effectiveStatus, ['CLASS_TEACHER_VERIFIED', 'PRINCIPAL_APPROVED', 'PUBLISHED'], true)) $statusColor = 'bg-sage text-white';
                                 ?>
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <?= $statusColor ?>">
-                                    <?= e(str_replace('_', ' ', $assignment['batch_status'])) ?>
+                                    <?= e(str_replace('_', ' ', $effectiveStatus)) ?>
                                 </span>
                                 
                                 <a href="<?= url('teacher/results/enter.php?class=' . $assignment['class_id'] . '&subject=' . $assignment['subject_id']) ?>" class="text-school-blue hover:text-school-navy text-sm font-medium">

@@ -8,11 +8,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit('Method Not Allowed');
 }
 
-$returnUrl = $_POST['return_url'] ?? 'teacher/results/class_verification.php';
-// Ensure return_url is a safe relative internal path
-if (str_contains($returnUrl, '://') || str_starts_with($returnUrl, '//')) {
-    $returnUrl = 'teacher/results/class_verification.php';
-}
+$returnUrl = sanitize_internal_redirect_path(
+    (string)($_POST['return_url'] ?? ''),
+    'teacher/results/class_verification.php'
+);
 
 if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
     set_flash('error', 'Invalid CSRF token.');
@@ -20,7 +19,9 @@ if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
 }
 
 $batchId = filter_var($_POST['batch_id'] ?? null, FILTER_VALIDATE_INT);
-if (!$batchId) {
+$postClassId = filter_var($_POST['class_id'] ?? null, FILTER_VALIDATE_INT);
+
+if ((!$batchId || $batchId <= 0) && !$postClassId) {
     set_flash('error', 'Invalid result batch.');
     redirect($returnUrl);
 }
@@ -31,10 +32,31 @@ try {
     $userRole = current_user_role();
     $staffId = current_staff_id();
 
-    $stmt = $pdo->prepare("SELECT * FROM result_batches WHERE id = ? FOR UPDATE");
     $pdo->beginTransaction();
-    $stmt->execute([$batchId]);
-    $batch = $stmt->fetch();
+
+    if (!$batchId || $batchId <= 0) {
+        $activeSession = get_active_academic_session();
+        $activeTerm = $activeSession ? get_active_term($activeSession['id']) : null;
+        if (!$activeSession || !$activeTerm) {
+            throw new Exception('No active academic session or term is configured.');
+        }
+        $findStmt = $pdo->prepare("SELECT * FROM result_batches WHERE class_id = ? AND academic_session_id = ? AND term_id = ? FOR UPDATE");
+        $findStmt->execute([$postClassId, $activeSession['id'], $activeTerm['id']]);
+        $batch = $findStmt->fetch();
+        if (!$batch) {
+            $insBatch = $pdo->prepare("INSERT INTO result_batches (class_id, academic_session_id, term_id, status) VALUES (?, ?, ?, 'DRAFT')");
+            $insBatch->execute([$postClassId, $activeSession['id'], $activeTerm['id']]);
+            $batchId = (int)$pdo->lastInsertId();
+            $findStmt->execute([$postClassId, $activeSession['id'], $activeTerm['id']]);
+            $batch = $findStmt->fetch();
+        } else {
+            $batchId = (int)$batch['id'];
+        }
+    } else {
+        $stmt = $pdo->prepare("SELECT * FROM result_batches WHERE id = ? FOR UPDATE");
+        $stmt->execute([$batchId]);
+        $batch = $stmt->fetch();
+    }
 
     if (!$batch) {
         throw new Exception('Result batch not found.');
@@ -109,7 +131,11 @@ try {
         'id'  => $batchId,
     ]);
 
-    // 2. Validate & upsert student evaluations
+    // 2. Validate & upsert student evaluations (only for students enrolled in this class/session)
+    $enrolledStmt = $pdo->prepare("SELECT student_id FROM student_enrollments WHERE class_id = ? AND academic_session_id = ?");
+    $enrolledStmt->execute([$classId, $sessionId]);
+    $enrolledMap = array_flip($enrolledStmt->fetchAll(PDO::FETCH_COLUMN));
+
     $evaluationsInput = $_POST['evaluations'] ?? [];
     $sdbaCols = array_keys(get_sdba_fields());
 
@@ -156,6 +182,9 @@ try {
         $studentId = filter_var($studentIdRaw, FILTER_VALIDATE_INT);
         if (!$studentId || !is_array($data)) {
             continue;
+        }
+        if (!isset($enrolledMap[$studentId])) {
+            throw new Exception('Cannot save evaluations for a student not enrolled in this class.');
         }
 
         $existingStmt->execute([$batchId, $studentId]);

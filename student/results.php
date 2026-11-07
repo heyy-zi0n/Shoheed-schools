@@ -13,7 +13,8 @@ $stmt->execute(['uid' => $userId]);
 $student = $stmt->fetch();
 
 if (!$student) {
-    die("Student profile not found.");
+    set_flash('error', 'Student profile not found.');
+    redirect('student/dashboard.php');
 }
 
 // Fetch all available published results for this student

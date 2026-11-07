@@ -9,33 +9,10 @@ $activePublicNav = $activePublicNav ?? 'home';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($pageTitle) ?> | Shoheed Schools</title>
     <link rel="icon" type="image/png" href="<?= url('assets/images/branding/shoheed-logo.png') ?>">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'school-blue': '#263B8F',
-                        'school-navy': '#111B3F',
-                        'school-red': '#C62828',
-                        'school-gold': '#E5B926',
-                        'ivory': '#F5F1E8',
-                        'paper': '#FFFDFC',
-                        'slate-gray': '#697386',
-                        'charcoal': '#20242C'
-                    },
-                    fontFamily: {
-                        'sans': ['Manrope', 'sans-serif'],
-                        'serif': ['DM Serif Display', 'serif']
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Manrope:wght@400;500;600;700&display=swap');
-    </style>
-    <link rel="stylesheet" href="<?= url('assets/css/app.css') ?>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Manrope:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="<?= url('assets/css/tailwind.min.css') ?>?v=<?= filemtime(__DIR__ . '/../../assets/css/tailwind.min.css') ?>">
     <link rel="stylesheet" href="<?= url('assets/css/print.css') ?>" media="print">
 </head>
 <body class="antialiased flex flex-col min-h-screen bg-ivory">
@@ -76,8 +53,8 @@ $activePublicNav = $activePublicNav ?? 'home';
                 
                 <!-- Mobile menu button -->
                 <div class="md:hidden flex items-center">
-                    <button id="mobile-menu-btn" class="text-charcoal hover:text-school-blue focus:outline-none p-2">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <button type="button" id="mobile-menu-btn" aria-label="Toggle navigation menu" aria-controls="mobile-menu" aria-expanded="false" class="text-charcoal hover:text-school-blue rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-school-blue p-2">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
                     </button>
@@ -98,15 +75,3 @@ $activePublicNav = $activePublicNav ?? 'home';
             </div>
         </div>
     </nav>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const btn = document.getElementById('mobile-menu-btn');
-            const menu = document.getElementById('mobile-menu');
-            if (btn && menu) {
-                btn.addEventListener('click', () => {
-                    menu.classList.toggle('hidden');
-                });
-            }
-        });
-    </script>

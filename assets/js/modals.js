@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Basic modal toggling
     const modalTriggers = document.querySelectorAll('[data-modal-target]');
     const modalCloses = document.querySelectorAll('[data-modal-close]');
 
@@ -9,7 +8,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const modal = document.getElementById(targetId);
             if (modal) {
                 modal.classList.remove('hidden');
-                document.body.style.overflow = 'hidden'; // Prevent background scrolling
+                document.body.style.overflow = 'hidden';
+                const focusable = modal.querySelector('input, select, textarea, button');
+                if (focusable) {
+                    setTimeout(() => focusable.focus(), 30);
+                }
             }
         });
     });
@@ -24,4 +27,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('[role="dialog"]:not(.hidden)').forEach(modal => {
+                modal.classList.add('hidden');
+                document.body.style.overflow = '';
+            });
+        }
+    });
 });
+

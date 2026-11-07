@@ -18,16 +18,16 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                 <form action="<?= url('actions/students/update_password.php') ?>" method="POST">
                     <?= csrf_field() ?>
                     <div class="mb-4">
-                        <label class="block text-sm font-semibold text-slate-gray mb-1">Current Password</label>
-                        <input type="password" name="current_password" required class="w-full border border-gray-300 rounded px-3 py-2">
+                        <label for="current_password" class="block text-sm font-semibold text-slate-gray mb-1">Current Password</label>
+                        <input id="current_password" type="password" name="current_password" required autocomplete="current-password" class="w-full border border-gray-300 rounded px-3 py-2">
                     </div>
                     <div class="mb-4">
-                        <label class="block text-sm font-semibold text-slate-gray mb-1">New Password</label>
-                        <input type="password" name="new_password" required minlength="8" class="w-full border border-gray-300 rounded px-3 py-2">
+                        <label for="new_password" class="block text-sm font-semibold text-slate-gray mb-1">New Password</label>
+                        <input id="new_password" type="password" name="new_password" required minlength="8" autocomplete="new-password" class="w-full border border-gray-300 rounded px-3 py-2">
                     </div>
                     <div class="mb-6">
-                        <label class="block text-sm font-semibold text-slate-gray mb-1">Confirm New Password</label>
-                        <input type="password" name="confirm_password" required minlength="8" class="w-full border border-gray-300 rounded px-3 py-2">
+                        <label for="confirm_password" class="block text-sm font-semibold text-slate-gray mb-1">Confirm New Password</label>
+                        <input id="confirm_password" type="password" name="confirm_password" required minlength="8" autocomplete="new-password" class="w-full border border-gray-300 rounded px-3 py-2">
                     </div>
                     <button type="submit" class="bg-school-blue text-white px-4 py-2 rounded text-sm hover:bg-school-navy transition-colors">
                         Update Password

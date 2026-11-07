@@ -92,7 +92,17 @@ try {
     // Log history
     $histStmt = $pdo->prepare("INSERT INTO result_workflow_history (result_batch_id, user_id, previous_status, new_status, comments) VALUES (?, ?, ?, ?, ?)");
     $histStmt->execute([$batchId, $userId, $currentStatus, $newStatus, "Principal performed $actionType"]);
-    
+
+    // Log audit entry
+    log_audit(
+        $pdo,
+        (int)$userId,
+        $actionType === 'publish' ? 'PUBLISH_RESULTS' : 'APPROVE_RESULTS',
+        'result_batch',
+        (int)$batchId,
+        "Principal performed {$actionType} on result batch #{$batchId} (class ID {$batch['class_id']})."
+    );
+
     $pdo->commit();
     set_flash('success', "Batch successfully " . ($actionType === 'publish' ? 'published' : 'approved') . ".");
     

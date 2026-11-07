@@ -10,6 +10,8 @@ $staffId = current_staff_id();
 
 $activeSession = get_active_academic_session();
 $sessionId = $activeSession ? $activeSession['id'] : null;
+$activeTerm = $sessionId ? get_active_term($sessionId) : null;
+$termId = $activeTerm ? $activeTerm['id'] : null;
 
 // Fetch Stats
 $totalClasses = $pdo->query("SELECT COUNT(*) FROM classes")->fetchColumn();
@@ -32,15 +34,16 @@ if ($sessionId) {
     $totalStudents->execute([$sessionId]);
     $totalStudents = $totalStudents->fetchColumn();
     
-    // Result Approvals Queue (CLASS_TEACHER_VERIFIED)
+    // Result Approvals Queue (CLASS_TEACHER_VERIFIED in active term)
+    $termClause = $termId ? " AND rb.term_id = ?" : "";
     $stmt = $pdo->prepare("
         SELECT rb.id, c.name as class_name, 
-               (SELECT COUNT(*) FROM subject_submissions ss WHERE ss.result_batch_id = rb.id AND ss.status IN ('CLASS_TEACHER_VERIFIED', 'PRINCIPAL_APPROVED', 'PUBLISHED')) as verified_subjects
+               (SELECT COUNT(*) FROM subject_submissions ss WHERE ss.result_batch_id = rb.id AND ss.status = 'SUBMITTED') as verified_subjects
         FROM result_batches rb
         JOIN classes c ON rb.class_id = c.id
-        WHERE rb.academic_session_id = ? AND rb.status = 'CLASS_TEACHER_VERIFIED'
+        WHERE rb.academic_session_id = ?{$termClause} AND rb.status = 'CLASS_TEACHER_VERIFIED'
     ");
-    $stmt->execute([$sessionId]);
+    $stmt->execute($termId ? [$sessionId, $termId] : [$sessionId]);
     $resultApprovalsQueue = $stmt->fetchAll();
     $pendingApprovals = count($resultApprovalsQueue);
 }
@@ -119,7 +122,7 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                                                 <p class="font-bold text-school-navy text-sm"><?= e($batch['class_name']) ?> Results</p>
                                                 <p class="text-xs text-slate-gray mt-1"><?= (int)$batch['verified_subjects'] ?> Verified Subjects in this Batch</p>
                                             </div>
-                                            <a href="<?= url("principal/results/index.php?batch={$batch['id']}") ?>" class="px-3 py-2 bg-school-blue text-white text-xs font-medium rounded shadow hover:bg-school-navy transition-colors">Review & Approve</a>
+                                            <a href="<?= url("principal/results/review.php?batch_id={$batch['id']}") ?>" class="px-3 py-2 bg-school-blue text-white text-xs font-medium rounded shadow hover:bg-school-navy transition-colors">Review &amp; Approve</a>
                                         </div>
                                     </li>
                                 <?php endforeach; ?>

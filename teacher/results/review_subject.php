@@ -13,11 +13,11 @@ $pageTitle = 'Review Subject Results';
 $pdo = get_db_connection();
 
 $activeSession = get_active_academic_session();
-$activeSession = get_active_academic_session();
 $activeTerm = $activeSession ? get_active_term($activeSession['id']) : null;
 
 if (!$activeSession || !$activeTerm) {
-    die("No active session or term.");
+    set_flash('error', 'No active academic session or term is configured.');
+    redirect('teacher/dashboard.php');
 }
 
 $classId = filter_input(INPUT_GET, 'class', FILTER_VALIDATE_INT);
@@ -33,8 +33,13 @@ if (!staff_can_access_class_teacher_function($staffId, $classId, $activeSession[
     redirect('teacher/results/class_verification.php');
 }
 
-$className = $pdo->query("SELECT name FROM classes WHERE id = " . (int)$classId)->fetchColumn();
-$subjectName = $pdo->query("SELECT name FROM subjects WHERE id = " . (int)$subjectId)->fetchColumn();
+$classStmt = $pdo->prepare("SELECT name FROM classes WHERE id = ?");
+$classStmt->execute([$classId]);
+$className = $classStmt->fetchColumn();
+
+$subjectStmt = $pdo->prepare("SELECT name FROM subjects WHERE id = ?");
+$subjectStmt->execute([$subjectId]);
+$subjectName = $subjectStmt->fetchColumn();
 
 // 2. Get batch and subject submission info
 $stmt = $pdo->prepare("SELECT * FROM result_batches WHERE class_id = :cid AND academic_session_id = :sid AND term_id = :tid");
@@ -178,7 +183,7 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
 
 <!-- Revision Modal -->
 <?php if ($subStatus === 'SUBMITTED' && in_array($batchStatus, ['DRAFT', 'SUBMITTED', 'REVISION_REQUIRED'])): ?>
-<div id="revisionModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
+<div id="revisionModal" role="dialog" aria-modal="true" aria-labelledby="revisionModalTitle" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
     <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
         <form action="<?= url('actions/results/request_revision.php') ?>" method="POST">
             <?= csrf_field() ?>
@@ -187,13 +192,13 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
             <input type="hidden" name="subject_id" value="<?= $subjectId ?>">
             
             <div class="px-6 py-4 border-b border-gray-200">
-                <h3 class="text-lg font-bold text-school-navy">Request Revision</h3>
+                <h3 id="revisionModalTitle" class="text-lg font-bold text-school-navy">Request Revision</h3>
             </div>
             <div class="p-6">
                 <p class="text-sm text-slate-gray mb-4">Requesting revision for <strong><?= e($subjectName) ?></strong>. This will unlock the scores for the subject teacher to edit.</p>
                 <div>
-                    <label class="block text-sm font-medium text-charcoal mb-1">Reason for Revision</label>
-                    <textarea name="comments" required rows="3" class="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-school-blue focus:border-school-blue sm:text-sm"></textarea>
+                    <label for="revision_comments" class="block text-sm font-medium text-charcoal mb-1">Reason for Revision</label>
+                    <textarea id="revision_comments" name="comments" required rows="3" class="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-school-blue focus:border-school-blue sm:text-sm"></textarea>
                 </div>
             </div>
             <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3 bg-gray-50 rounded-b-lg">

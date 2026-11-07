@@ -1,0 +1,19 @@
+# Disable directory listing globally
+Options -Indexes
+
+# Protect hidden dotfiles (.env, .git, .htaccess, etc.) and sensitive file extensions
+<FilesMatch "(^\.|\.(?i:env|sql|md|bak|log|lock|swp|swo|ini|sh|bat|cmd)$|^(?i:composer\.(json|lock)|package(-lock)?\.json)$)">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+<IfModule mod_headers.c>
+    Header setifempty X-Content-Type-Options "nosniff"
+    Header setifempty X-Frame-Options "SAMEORIGIN"
+    Header setifempty Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>

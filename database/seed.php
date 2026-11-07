@@ -1,5 +1,16 @@
 <?php
-require_once __DIR__ . '/../config/database.php';
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    exit('Forbidden: This script may only be executed from the command line.');
+}
+
+require_once __DIR__ . '/../core/env.php';
+load_env(__DIR__ . '/../.env');
+
+if (strtolower((string)env('APP_ENV', 'local')) === 'production') {
+    fwrite(STDERR, "Refusing to run database seeder in production environment.\n");
+    exit(1);
+}
 
 try {
     $config = require __DIR__ . '/../config/database.php';

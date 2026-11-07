@@ -26,7 +26,9 @@ CREATE TABLE staff (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NULL UNIQUE,
     first_name VARCHAR(100) NOT NULL,
+    middle_name VARCHAR(100) NULL,
     last_name VARCHAR(100) NOT NULL,
+    gender ENUM('Male', 'Female') NULL,
     staff_category ENUM('TEACHING', 'NON_TEACHING') NULL DEFAULT NULL,
     public_designation VARCHAR(150) NULL,
     short_bio TEXT NULL,
@@ -67,7 +69,7 @@ CREATE TABLE students (
 -- 5. Guardians
 CREATE TABLE guardians (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL UNIQUE,
+    user_id INT NULL UNIQUE,
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     phone VARCHAR(20) NOT NULL,
@@ -258,6 +260,17 @@ CREATE TABLE result_workflow_history (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
+CREATE TABLE subject_submissions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    result_batch_id INT NOT NULL,
+    subject_id INT NOT NULL,
+    status ENUM('DRAFT', 'SUBMITTED', 'REVISION_REQUIRED') DEFAULT 'DRAFT',
+    comments TEXT NULL,
+    UNIQUE KEY uq_batch_subject (result_batch_id, subject_id),
+    FOREIGN KEY (result_batch_id) REFERENCES result_batches(id) ON DELETE CASCADE,
+    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 -- 13. Attendance
 CREATE TABLE attendance (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -266,7 +279,7 @@ CREATE TABLE attendance (
     academic_session_id INT NOT NULL,
     term_id INT NOT NULL,
     attendance_date DATE NOT NULL,
-    status ENUM('Present', 'Absent', 'Late', 'Excused') NOT NULL,
+    status ENUM('PRESENT', 'ABSENT', 'LATE', 'EXCUSED') NOT NULL,
     recorded_by INT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -285,6 +298,7 @@ CREATE TABLE fee_structures (
     term_id INT NOT NULL,
     class_id INT NOT NULL,
     name VARCHAR(100) NOT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
     total_amount DECIMAL(10,2) NOT NULL,
     UNIQUE (academic_session_id, term_id, class_id),
     FOREIGN KEY (academic_session_id) REFERENCES academic_sessions(id),
@@ -355,7 +369,7 @@ CREATE TABLE announcements (
     title VARCHAR(200) NOT NULL,
     body TEXT NOT NULL,
     author_id INT NULL,
-    audience ENUM('ALL', 'STAFF', 'STUDENTS', 'PARENTS') DEFAULT 'ALL',
+    audience ENUM('ALL', 'STAFF', 'STUDENTS', 'PARENTS', 'PUBLIC') DEFAULT 'ALL',
     is_public BOOLEAN DEFAULT FALSE,
     status ENUM('DRAFT', 'PUBLISHED') DEFAULT 'DRAFT',
     publish_date DATE NULL,
@@ -372,10 +386,11 @@ CREATE TABLE notifications (
     message TEXT NOT NULL,
     is_read BOOLEAN DEFAULT FALSE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_notifications_user_read_created (user_id, is_read, created_at),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- 16. Audit Logs & Settings
+-- 16. Audit Logs, Rate Limiting & Settings
 CREATE TABLE audit_logs (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NULL,
@@ -385,8 +400,21 @@ CREATE TABLE audit_logs (
     description TEXT NULL,
     ip_address VARCHAR(45) NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_audit_action_created (action, created_at),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
+
+CREATE TABLE login_attempts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(100) NOT NULL,
+    ip_address VARCHAR(45) NULL,
+    failed_attempts INT DEFAULT 0,
+    last_failed_at DATETIME NULL,
+    locked_until DATETIME NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY idx_username (username)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE system_settings (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -435,4 +463,4 @@ CREATE TABLE `payment_submissions` (
 
 UPDATE users
 SET status = 'INACTIVE'
-WHERE role_id = (SELECT id FROM roles WHERE name = 'ROLE_PARENT');
+WHERE role_id = (SELECT id FROM roles WHERE name = 'PARENT');

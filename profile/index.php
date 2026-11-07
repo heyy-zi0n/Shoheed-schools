@@ -9,34 +9,39 @@ $userRole = current_user_role();
 $displayName = get_user_display_name($userId, $userRole);
 
 // Fetch user data
-$stmt = $pdo->prepare("SELECT username FROM users WHERE id = ?");
+$stmt = $pdo->prepare("SELECT username, email FROM users WHERE id = ?");
 $stmt->execute([$userId]);
 $user = $stmt->fetch();
 
+$staffId = null;
+$phone = null;
+$email = $user['email'] ?? null;
+$profileImage = null;
+$shortBio = null;
+$isStaff = false;
+
 // Fetch entity-specific data
-if (in_array($userRole, ['ROLE_ADMIN', 'ROLE_PRINCIPAL', 'ROLE_CLASS_TEACHER', 'ROLE_SUBJECT_TEACHER', 'ROLE_BURSAR'])) {
-    $stmt = $pdo->prepare("SELECT id, phone, email, profile_image, short_bio FROM staff WHERE user_id = ?");
+if (in_array($userRole, [ROLE_ADMIN, ROLE_PRINCIPAL, ROLE_CLASS_TEACHER, ROLE_SUBJECT_TEACHER, ROLE_BURSAR], true)) {
+    $stmt = $pdo->prepare("SELECT id, phone, public_email, profile_image, short_bio FROM staff WHERE user_id = ?");
     $stmt->execute([$userId]);
     $entity = $stmt->fetch();
     if ($entity) {
         $staffId = $entity['id'];
         $phone = $entity['phone'] ?? null;
-        $email = $entity['email'] ?? null;
+        if (empty($email) && !empty($entity['public_email'])) {
+            $email = $entity['public_email'];
+        }
         $profileImage = $entity['profile_image'] ?? null;
         $shortBio = $entity['short_bio'] ?? null;
         $isStaff = true;
-    } else {
-        $staffId = null;
-        $phone = null;
-        $email = null;
-        $profileImage = null;
-        $shortBio = null;
-        $isStaff = false;
     }
-} elseif ($userRole === 'ROLE_STUDENT') {
-    // students might not have email/phone, or maybe they do?
-    $phone = null;
-    $email = null;
+} elseif ($userRole === ROLE_STUDENT) {
+    $stmt = $pdo->prepare("SELECT id, profile_image FROM students WHERE user_id = ?");
+    $stmt->execute([$userId]);
+    $stuEntity = $stmt->fetch();
+    if ($stuEntity && !empty($stuEntity['profile_image'])) {
+        $profileImage = $stuEntity['profile_image'];
+    }
 }
 
 require __DIR__ . '/../templates/layouts/app-header.php';
@@ -60,7 +65,11 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                         <div class="p-6 text-center border-b border-gray-100 bg-gray-50/50">
                             <?php if (!empty($profileImage)): ?>
                                 <div class="w-24 h-24 mx-auto rounded-full overflow-hidden border-4 border-white shadow-sm mb-4">
-                                    <img src="<?= url('media/staff-profile.php?id=' . urlencode((string)$staffId)) ?>" alt="Profile" class="w-full h-full object-cover">
+                                    <?php if ($isStaff && $staffId): ?>
+                                        <img src="<?= e(url('media/staff-profile.php?id=' . (int)$staffId)) ?>" alt="<?= e($displayName) ?>" class="w-full h-full object-cover">
+                                    <?php else: ?>
+                                        <img src="<?= e(url($profileImage)) ?>" alt="<?= e($displayName) ?>" class="w-full h-full object-cover">
+                                    <?php endif; ?>
                                 </div>
                             <?php else: ?>
                                 <div class="w-20 h-20 mx-auto rounded-full bg-school-gold text-school-navy font-bold text-2xl flex items-center justify-center border-4 border-white shadow-sm mb-4">

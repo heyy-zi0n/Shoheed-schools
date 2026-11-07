@@ -6,8 +6,8 @@ require_role([ROLE_ADMIN]);
 $pageTitle = 'Add Staff';
 $pdo = get_db_connection();
 
-// Exclude Admin from normal staff roles creation if preferred, but we'll include all here
-$stmt = $pdo->query("SELECT * FROM roles ORDER BY name");
+// Exclude Student and Parent roles from staff role assignment
+$stmt = $pdo->query("SELECT * FROM roles WHERE name NOT IN ('STUDENT', 'PARENT') ORDER BY name");
 $roles = $stmt->fetchAll();
 
 require __DIR__ . '/../../templates/layouts/app-header.php';
@@ -30,7 +30,7 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
             </div>
             
             <div class="bg-paper p-8 rounded-lg shadow-sm border border-gray-100 max-w-3xl">
-                <form action="<?= url('actions/staff/create.php') ?>" method="POST" class="space-y-6">
+                <form action="<?= url('actions/staff/create.php') ?>" method="POST" enctype="multipart/form-data" class="space-y-6">
                     <?= csrf_field() ?>
                     
                     <div class="border-b border-gray-200 pb-4 mb-4">
@@ -43,8 +43,19 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                             <input type="text" name="first_name" id="first_name" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-school-blue focus:border-school-blue sm:text-sm">
                         </div>
                         <div>
+                            <label for="middle_name" class="block text-sm font-medium text-charcoal">Middle Name (Optional)</label>
+                            <input type="text" name="middle_name" id="middle_name" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-school-blue focus:border-school-blue sm:text-sm">
+                        </div>
+                        <div>
                             <label for="last_name" class="block text-sm font-medium text-charcoal">Last Name *</label>
                             <input type="text" name="last_name" id="last_name" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-school-blue focus:border-school-blue sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="gender" class="block text-sm font-medium text-charcoal">Gender *</label>
+                            <select name="gender" id="gender" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-school-blue focus:border-school-blue sm:text-sm">
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
                         </div>
                     </div>
                     
@@ -57,6 +68,12 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                             <label for="address" class="block text-sm font-medium text-charcoal">Address</label>
                             <input type="text" name="address" id="address" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-school-blue focus:border-school-blue sm:text-sm">
                         </div>
+                    </div>
+
+                    <div>
+                        <label for="profile_image" class="block text-sm font-medium text-charcoal">Profile Photo (Optional)</label>
+                        <input type="file" name="profile_image" id="profile_image" accept="image/jpeg,image/png,image/webp" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-1.5 px-3 text-sm">
+                        <p class="mt-1 text-xs text-slate-gray">JPG, PNG, or WebP (max 2 MB).</p>
                     </div>
                     
                     <div class="border-b border-gray-200 pb-4 mb-4 mt-8">

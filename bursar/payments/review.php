@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../../config/bootstrap.php';
 
 require_role([ROLE_BURSAR]);
@@ -157,9 +157,9 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
 </div>
 
 <!-- Reject Modal -->
-<div id="reject-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+<div id="reject-modal" role="dialog" aria-modal="true" aria-labelledby="rejectModalTitle" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
     <div class="relative w-full max-w-md mx-auto bg-white rounded-xl shadow-2xl p-8 border border-gray-100">
-        <h3 class="text-xl font-bold text-school-navy mb-4">Reject Submission</h3>
+        <h3 id="rejectModalTitle" class="text-xl font-bold text-school-navy mb-4">Reject Submission</h3>
         <form action="<?= url('actions/payments/reject_submission.php') ?>" method="POST" class="space-y-4">
             <?= csrf_field() ?>
             <input type="hidden" name="id" value="<?= $sub['id'] ?>">

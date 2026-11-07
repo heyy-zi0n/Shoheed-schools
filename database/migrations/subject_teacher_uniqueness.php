@@ -1,5 +1,10 @@
 <?php
-require_once 'c:\xampp\htdocs\Shoheed schools\config\bootstrap.php';
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    exit('Forbidden: This script may only be executed from the command line.');
+}
+
+require_once __DIR__ . '/../../config/bootstrap.php';
 $pdo = get_db_connection();
 
 echo "Running Migration...\n";

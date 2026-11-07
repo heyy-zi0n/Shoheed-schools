@@ -9,8 +9,19 @@
 $color = $color ?? 'school-blue';
 $subtitle = $subtitle ?? null;
 $link = $link ?? null;
+$borderColorMap = [
+    'school-blue' => 'border-l-school-blue',
+    'school-navy' => 'border-l-school-navy',
+    'school-red'  => 'border-l-school-red',
+    'school-gold' => 'border-l-school-gold',
+    'sage'        => 'border-l-sage',
+    'amber'       => 'border-l-amber',
+    'dusty-red'   => 'border-l-dusty-red',
+    'slate-gray'  => 'border-l-slate-gray',
+];
+$borderClass = $borderColorMap[$color] ?? 'border-l-school-blue';
 ?>
-<div class="bg-paper p-6 rounded-lg shadow-sm border border-gray-100 border-l-4 border-l-<?= e($color) ?> h-full flex flex-col justify-between">
+<div class="bg-paper p-6 rounded-lg shadow-sm border border-gray-100 border-l-4 <?= $borderClass ?> h-full flex flex-col justify-between">
     <div>
         <p class="text-xs font-bold text-slate-gray uppercase tracking-wider mb-1"><?= e($title) ?></p>
         <p class="text-3xl font-serif font-bold text-school-navy mt-1 truncate"><?= is_numeric($value) && floor($value) == $value ? number_format((float)$value) : e($value) ?></p>

@@ -55,21 +55,22 @@ if ($role === ROLE_STUDENT) {
 }
 
 $balance = max(0, $receipt['invoice_total'] - $receipt['paid_to_date']);
+$backUrl = ($role === ROLE_STUDENT) ? url('student/fees.php') : url('bursar/payments/index.php');
 
 $pageTitle = 'Receipt ' . $receipt['receipt_number'];
 require __DIR__ . '/../../templates/layouts/app-header.php';
 ?>
-<div class="bg-gray-100 min-h-screen py-10 no-print">
-    <div class="max-w-3xl mx-auto flex justify-between items-center mb-6">
-        <a href="<?= url('bursar/payments/index.php') ?>" class="text-school-blue hover:underline">&larr; Back to Payments</a>
-        <button onclick="window.print()" class="bg-school-navy text-white px-4 py-2 rounded shadow flex items-center gap-2 hover:bg-school-blue transition-colors">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+<div class="bg-gray-100 min-h-screen py-10 print:bg-white print:py-0">
+    <div class="max-w-3xl mx-auto flex justify-between items-center mb-6 px-4 sm:px-0 no-print">
+        <a href="<?= e($backUrl) ?>" class="text-school-blue hover:underline font-medium">&larr; Back to Payments</a>
+        <button type="button" onclick="window.print()" class="bg-school-navy text-white px-4 py-2 rounded shadow flex items-center gap-2 hover:bg-school-blue transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
             Print Receipt
         </button>
     </div>
 
     <!-- Printable Area -->
-    <div class="print-only max-w-3xl mx-auto bg-white p-12 shadow-lg border-t-8 border-t-school-blue rounded">
+    <div class="print-only max-w-3xl mx-auto bg-white p-8 sm:p-12 shadow-lg print:shadow-none border-t-8 border-t-school-blue rounded">
         <!-- Header -->
         <div class="flex justify-between items-start border-b border-gray-200 pb-8 mb-8">
             <div class="flex items-center gap-4">

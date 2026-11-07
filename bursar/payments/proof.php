@@ -41,14 +41,34 @@ if (!$allowed) {
     exit('Forbidden');
 }
 
-$path = dirname(__DIR__, 2) . '/storage/payment_proofs/' . $submission['proof_path'];
-if (!file_exists($path)) {
+$proofFilename = basename((string)$submission['proof_path']);
+if ($proofFilename === '' || $proofFilename !== (string)$submission['proof_path']) {
+    http_response_code(400);
+    exit('Invalid proof path');
+}
+
+$storageDir = dirname(__DIR__, 2) . '/storage/payment_proofs';
+$storageReal = realpath($storageDir);
+$realPath = realpath($storageDir . '/' . $proofFilename);
+
+if (!$realPath || !$storageReal || !str_starts_with($realPath, $storageReal) || !is_file($realPath)) {
     http_response_code(404);
     exit('File not found on disk');
 }
 
-$mime = mime_content_type($path);
+$finfo = new finfo(FILEINFO_MIME_TYPE);
+$mime = (string)$finfo->file($realPath);
+$allowedMimes = ['image/jpeg', 'image/png', 'application/pdf'];
+if (!in_array($mime, $allowedMimes, true)) {
+    http_response_code(403);
+    exit('Forbidden file type');
+}
+
 header('Content-Type: ' . $mime);
-header('Content-Length: ' . filesize($path));
-readfile($path);
+header('Content-Length: ' . filesize($realPath));
+header('Content-Disposition: inline; filename="' . addslashes($proofFilename) . '"');
+header('X-Content-Type-Options: nosniff');
+header("Content-Security-Policy: default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox");
+header('Cache-Control: private, no-store, max-age=0');
+readfile($realPath);
 exit;

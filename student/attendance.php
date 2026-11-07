@@ -12,10 +12,10 @@ $stmt->execute(['uid' => $userId]);
 $studentId = $stmt->fetchColumn();
 
 if (!$studentId) {
-    die("Student profile not found.");
+    set_flash('error', 'Student profile not found.');
+    redirect('student/dashboard.php');
 }
 
-$activeSession = get_active_academic_session();
 $activeSession = get_active_academic_session();
 $activeTerm = $activeSession ? get_active_term($activeSession['id']) : null;
 

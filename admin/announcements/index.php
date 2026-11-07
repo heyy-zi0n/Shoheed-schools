@@ -42,23 +42,27 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            <?php foreach ($announcements as $ann): ?>
+                            <?php foreach ($announcements as $ann):
+                                $bodyText = (string)($ann['body'] ?? '');
+                                $preview = mb_strlen($bodyText) > 80 ? mb_substr($bodyText, 0, 80) . '...' : $bodyText;
+                                $isPub = ($ann['status'] ?? 'DRAFT') === 'PUBLISHED';
+                            ?>
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-4">
                                     <div class="text-sm font-bold text-charcoal"><?= e($ann['title']) ?></div>
-                                    <div class="text-xs text-slate-gray mt-1 line-clamp-1"><?= e(substr($ann['content'], 0, 50)) ?>...</div>
+                                    <div class="text-xs text-slate-gray mt-1 line-clamp-1"><?= e($preview) ?></div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                        <?= e($ann['target_audience']) ?>
+                                        <?= e($ann['audience'] ?? 'ALL') ?>
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-gray">
                                     <?= e(date('M j, Y', strtotime($ann['created_at']))) ?>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="px-2 py-1 text-xs font-semibold rounded-full <?= $ann['is_published'] ? 'bg-sage text-white' : 'bg-gray-200 text-gray-800' ?>">
-                                        <?= $ann['is_published'] ? 'Published' : 'Draft' ?>
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full <?= $isPub ? 'bg-sage text-white' : 'bg-gray-200 text-gray-800' ?>">
+                                        <?= $isPub ? 'Published' : 'Draft' ?>
                                     </span>
                                 </td>
                             </tr>

@@ -45,8 +45,16 @@ $activeTerm = $activeSession ? get_active_term($activeSession['id']) : null;
         throw new Exception("You are not authorized to enter scores for this subject and class.");
     }
     
-    // 0. Pre-validate all scores to prevent partial/clamped saves
+    // 0. Pre-validate all scores and student enrollments to prevent partial/clamped or unauthorized saves
+    $enrolledStmt = $pdo->prepare("SELECT student_id FROM student_enrollments WHERE class_id = ? AND academic_session_id = ?");
+    $enrolledStmt->execute([$classId, $activeSession['id']]);
+    $enrolledMap = array_flip($enrolledStmt->fetchAll(PDO::FETCH_COLUMN));
+
     foreach ($scores as $studentId => $data) {
+        $studentIdInt = filter_var($studentId, FILTER_VALIDATE_INT);
+        if (!$studentIdInt || !isset($enrolledMap[$studentIdInt])) {
+            throw new Exception("Cannot enter scores for a student not enrolled in this class.");
+        }
         $caStr = $data['ca'] ?? '';
         $exStr = $data['exam'] ?? '';
         

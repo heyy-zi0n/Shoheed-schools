@@ -44,18 +44,36 @@ try {
     $userId = current_user_id(); // for audit logs
     
     $pdo->beginTransaction();
-    
+
+    // Lock and validate the result batch state and ownership
+    $batchStmt = $pdo->prepare("SELECT * FROM result_batches WHERE id = ? FOR UPDATE");
+    $batchStmt->execute([$batchId]);
+    $batch = $batchStmt->fetch();
+
+    if (!$batch || (int)$batch['class_id'] !== (int)$classId || (int)$batch['academic_session_id'] !== (int)$activeSession['id']) {
+        throw new Exception("Result batch not found or does not belong to this class.");
+    }
+
+    if (!in_array($batch['status'], ['DRAFT', 'SUBMITTED', 'REVISION_REQUIRED'], true)) {
+        throw new Exception("Cannot request revision: this result batch has already been verified or published.");
+    }
+
     // Update subject submission
     $stmt = $pdo->prepare("UPDATE subject_submissions SET status = 'REVISION_REQUIRED', comments = ? WHERE result_batch_id = ? AND subject_id = ? AND status = 'SUBMITTED'");
     $stmt->execute([$comments, $batchId, $subjectId]);
-    
+
     if ($stmt->rowCount() === 0) {
         throw new Exception("Subject is not in a valid state for revision.");
     }
-    
-    // Also set batch status to REVISION_REQUIRED if not already
+
+    // Set batch status to REVISION_REQUIRED if not already
+    $prevBatchStatus = $batch['status'];
     $stmt = $pdo->prepare("UPDATE result_batches SET status = 'REVISION_REQUIRED' WHERE id = ?");
     $stmt->execute([$batchId]);
+
+    // Log workflow history
+    $histStmt = $pdo->prepare("INSERT INTO result_workflow_history (result_batch_id, user_id, previous_status, new_status, comments) VALUES (?, ?, ?, ?, ?)");
+    $histStmt->execute([$batchId, $userId, $prevBatchStatus, 'REVISION_REQUIRED', "Requested revision for subject ID {$subjectId}: {$comments}"]);
     
     // Notify subject teacher
     $stStmt = $pdo->prepare("

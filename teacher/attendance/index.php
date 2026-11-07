@@ -13,18 +13,17 @@ $pageTitle = 'Class Attendance';
 $pdo = get_db_connection();
 
 $activeSession = get_active_academic_session();
-$activeSession = get_active_academic_session();
 $activeTerm = $activeSession ? get_active_term($activeSession['id']) : null;
 
 if (!$activeSession || !$activeTerm) {
-    die("No active session or term.");
+    set_flash('error', 'No active academic session or term is configured.');
+    redirect('teacher/dashboard.php');
 }
 
 $classId = filter_input(INPUT_GET, 'class', FILTER_VALIDATE_INT);
-$dateStr = filter_input(INPUT_GET, 'date');
-$date = $dateStr ? date('Y-m-d', strtotime($dateStr)) : date('Y-m-d');
-
-
+$dateStr = trim((string)(filter_input(INPUT_GET, 'date') ?? ''));
+$parsedDate = $dateStr !== '' ? DateTime::createFromFormat('Y-m-d', $dateStr) : false;
+$date = ($parsedDate && $parsedDate->format('Y-m-d') === $dateStr) ? $dateStr : date('Y-m-d');
 
 // Get assigned classes
 $stmt = $pdo->prepare("
@@ -37,7 +36,8 @@ $stmt->execute(['staff_id' => $staffId, 'session_id' => $activeSession['id']]);
 $assignedClasses = $stmt->fetchAll();
 
 if (empty($assignedClasses)) {
-    die("You are not assigned as a Class Teacher for the current session.");
+    set_flash('error', 'You are not assigned as a Class Teacher for the current session.');
+    redirect('teacher/dashboard.php');
 }
 
 if (!$classId) {
@@ -55,7 +55,8 @@ foreach ($assignedClasses as $ac) {
     }
 }
 if (!$isAssigned) {
-    die("You are not authorized to manage attendance for this class.");
+    set_flash('error', 'You are not authorized to manage attendance for this class.');
+    redirect('teacher/dashboard.php');
 }
 
 // Get enrolled students
@@ -97,16 +98,16 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                         
                         <form method="GET" action="<?= url('teacher/attendance/index.php') ?>" class="space-y-4">
                             <div>
-                                <label class="block text-xs font-medium text-slate-gray mb-1">Class</label>
-                                <select name="class" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-school-blue sm:text-sm">
+                                <label for="filter_class" class="block text-xs font-medium text-slate-gray mb-1">Class</label>
+                                <select id="filter_class" name="class" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-school-blue sm:text-sm">
                                     <?php foreach ($assignedClasses as $ac): ?>
                                         <option value="<?= $ac['id'] ?>" <?= $ac['id'] == $classId ? 'selected' : '' ?>><?= e($ac['name']) ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-slate-gray mb-1">Date</label>
-                                <input type="date" name="date" value="<?= e($date) ?>" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-school-blue sm:text-sm">
+                                <label for="filter_date" class="block text-xs font-medium text-slate-gray mb-1">Date</label>
+                                <input type="date" id="filter_date" name="date" value="<?= e($date) ?>" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-school-blue sm:text-sm">
                             </div>
                             <button type="submit" class="w-full bg-gray-100 hover:bg-gray-200 text-charcoal py-2 rounded text-sm font-medium transition-colors">
                                 View Attendance

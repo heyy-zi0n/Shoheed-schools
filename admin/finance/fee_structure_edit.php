@@ -87,14 +87,14 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                             <div>
-                                <label class="block text-sm font-medium text-charcoal mb-1">Structure Name *</label>
-                                <input type="text" name="name" value="<?= e($structure['name']) ?>" required <?= ($isUsed || $isReadOnly) ? 'readonly class="w-full border border-gray-300 rounded p-2 text-sm bg-gray-100"' : 'class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-school-blue focus:border-school-blue"' ?>>
+                                <label for="structure_name" class="block text-sm font-medium text-charcoal mb-1">Structure Name *</label>
+                                <input type="text" id="structure_name" name="name" value="<?= e($structure['name']) ?>" required <?= ($isUsed || $isReadOnly) ? 'readonly class="w-full border border-gray-300 rounded p-2 text-sm bg-gray-100"' : 'class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-school-blue focus:border-school-blue"' ?>>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-charcoal mb-1">Academic Session *</label>
+                                <label for="session-select" class="block text-sm font-medium text-charcoal mb-1">Academic Session *</label>
                                 <?php if ($isUsed || $isReadOnly): ?>
                                     <?php if (!$isReadOnly): ?><input type="hidden" name="academic_session_id" value="<?= $structure['academic_session_id'] ?>"><?php endif; ?>
-                                    <select disabled class="w-full border border-gray-300 rounded p-2 text-sm bg-gray-100">
+                                    <select id="session-select" disabled class="w-full border border-gray-300 rounded p-2 text-sm bg-gray-100">
                                         <?php foreach ($sessions as $s): ?>
                                             <option value="<?= (int)$s['id'] ?>" <?= $s['id'] == $structure['academic_session_id'] ? 'selected' : '' ?>><?= e($s['name']) ?></option>
                                         <?php endforeach; ?>
@@ -109,10 +109,10 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                                 <?php endif; ?>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-charcoal mb-1">Term *</label>
+                                <label for="term-select" class="block text-sm font-medium text-charcoal mb-1">Term *</label>
                                 <?php if ($isUsed || $isReadOnly): ?>
                                     <?php if (!$isReadOnly): ?><input type="hidden" name="term_id" value="<?= $structure['term_id'] ?>"><?php endif; ?>
-                                    <select disabled class="w-full border border-gray-300 rounded p-2 text-sm bg-gray-100">
+                                    <select id="term-select" disabled class="w-full border border-gray-300 rounded p-2 text-sm bg-gray-100">
                                         <?php foreach ($terms as $t): ?>
                                             <option value="<?= (int)$t['id'] ?>" <?= $t['id'] == $structure['term_id'] ? 'selected' : '' ?>><?= e($t['name']) ?></option>
                                         <?php endforeach; ?>
@@ -127,16 +127,16 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                                 <?php endif; ?>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-charcoal mb-1">Applicable Class *</label>
+                                <label for="class-select" class="block text-sm font-medium text-charcoal mb-1">Applicable Class *</label>
                                 <?php if ($isUsed || $isReadOnly): ?>
                                     <?php if (!$isReadOnly): ?><input type="hidden" name="class_id" value="<?= $structure['class_id'] ?>"><?php endif; ?>
-                                    <select disabled class="w-full border border-gray-300 rounded p-2 text-sm bg-gray-100">
+                                    <select id="class-select" disabled class="w-full border border-gray-300 rounded p-2 text-sm bg-gray-100">
                                         <?php foreach ($classes as $c): ?>
                                             <option value="<?= (int)$c['id'] ?>" <?= $c['id'] == $structure['class_id'] ? 'selected' : '' ?>><?= e($c['name']) ?></option>
                                         <?php endforeach; ?>
                                     </select>
                                 <?php else: ?>
-                                    <select name="class_id" required class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-school-blue focus:border-school-blue">
+                                    <select id="class-select" name="class_id" required class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-school-blue focus:border-school-blue">
                                         <option value="">Select Class...</option>
                                         <?php foreach ($classes as $c): ?>
                                             <option value="<?= (int)$c['id'] ?>" <?= $c['id'] == $structure['class_id'] ? 'selected' : '' ?>><?= e($c['name']) ?></option>

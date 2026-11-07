@@ -90,6 +90,8 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                         </div>
                         <div>
                             <label class="block text-sm font-bold text-slate-gray mb-1" for="email">Email Address</label>
+                            <input type="email" id="email" name="email" value="<?= e($staff['user_email'] ?? '') ?>"
+                                   class="w-full border border-gray-300 rounded p-2 focus:ring-school-blue focus:border-school-blue">
                         </div>
                         <div>
                             <label class="block text-sm font-bold text-slate-gray mb-1" for="staff_status">Employment Status</label>

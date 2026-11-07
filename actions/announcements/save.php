@@ -14,15 +14,20 @@ if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
 }
 
 $title = trim($_POST['title'] ?? '');
-$audience = $_POST['target_audience'] ?? '';
-$content = trim($_POST['content'] ?? '');
+$audience = strtoupper(trim($_POST['target_audience'] ?? $_POST['audience'] ?? 'ALL'));
+$body = trim($_POST['content'] ?? $_POST['body'] ?? '');
 $isPublished = isset($_POST['is_published']) ? 1 : 0;
 
 $errors = validate_required([
     'title' => $title,
     'target_audience' => $audience,
-    'content' => $content
+    'content' => $body
 ], ['title', 'target_audience', 'content']);
+
+$validAudiences = ['ALL', 'STAFF', 'STUDENTS', 'PARENTS', 'PUBLIC'];
+if (!in_array($audience, $validAudiences, true)) {
+    $errors[] = 'Invalid target audience selected.';
+}
 
 if (!empty($errors)) {
     set_flash('error', implode(' ', $errors));
@@ -31,24 +36,39 @@ if (!empty($errors)) {
 
 try {
     $pdo = get_db_connection();
-    
-    $stmt = $pdo->prepare("INSERT INTO announcements (title, content, target_audience, is_published, created_by) VALUES (?, ?, ?, ?, ?)");
+    $isPublic = ($audience === 'PUBLIC') ? 1 : 0;
+    $status = $isPublished ? 'PUBLISHED' : 'DRAFT';
+    $publishDate = $isPublished ? date('Y-m-d') : null;
+
+    $stmt = $pdo->prepare("
+        INSERT INTO announcements (title, body, author_id, audience, is_public, status, publish_date)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ");
     $stmt->execute([
         $title,
-        $content,
+        $body,
+        current_user_id(),
         $audience,
-        $isPublished,
-        current_user_id()
+        $isPublic,
+        $status,
+        $publishDate
     ]);
-    
-    // Audit Log
-    $auditStmt = $pdo->prepare("INSERT INTO audit_logs (user_id, action, entity_type, entity_id, description) VALUES (?, ?, ?, ?, ?)");
-    $auditStmt->execute([current_user_id(), 'CREATE_ANNOUNCEMENT', 'announcement', $pdo->lastInsertId(), "Created announcement targeting {$audience}"]);
+    $announcementId = (int)$pdo->lastInsertId();
 
-    set_flash('success', "Announcement created successfully.");
+    log_audit(
+        $pdo,
+        current_user_id(),
+        'CREATE_ANNOUNCEMENT',
+        'announcement',
+        $announcementId,
+        "Created {$status} announcement '{$title}' targeting {$audience}."
+    );
+
+    set_flash('success', 'Announcement created successfully.');
     redirect('admin/announcements/index.php');
-    
+
 } catch (Exception $e) {
-    set_flash('error', "Database error: " . $e->getMessage());
+    error_log('Error saving announcement: ' . $e->getMessage());
+    set_flash('error', 'Unable to save announcement due to a database error.');
     redirect('admin/announcements/create.php');
 }

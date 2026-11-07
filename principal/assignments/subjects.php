@@ -7,7 +7,8 @@ $pdo = get_db_connection();
 
 $activeSession = get_active_academic_session();
 if (!$activeSession) {
-    die("No active session found.");
+    set_flash('error', 'No active academic session is configured.');
+    redirect('principal/dashboard.php');
 }
 
 $classId = filter_input(INPUT_GET, 'class', FILTER_VALIDATE_INT);
@@ -71,9 +72,9 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
             
             <div class="bg-paper p-4 rounded-lg shadow-sm border border-gray-100 mb-6 max-w-sm">
                 <form method="GET" action="<?= url('principal/assignments/subjects.php') ?>">
-                    <label class="block text-sm font-bold text-slate-gray mb-2">Select Class</label>
+                    <label for="select_class" class="block text-sm font-bold text-slate-gray mb-2">Select Class</label>
                     <div class="flex gap-2">
-                        <select name="class" class="flex-1 border border-gray-300 rounded p-2 focus:ring-school-blue focus:border-school-blue text-sm">
+                        <select id="select_class" name="class" class="flex-1 border border-gray-300 rounded p-2 focus:ring-school-blue focus:border-school-blue text-sm">
                             <option value="">-- Choose a class --</option>
                             <?php foreach ($classes as $c): ?>
                                 <option value="<?= $c['id'] ?>" <?= $c['id'] == $classId ? 'selected' : '' ?>><?= e($c['name']) ?></option>
@@ -122,7 +123,7 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                                         <?= csrf_field() ?>
                                         <input type="hidden" name="class_id" value="<?= $classId ?>">
                                         <input type="hidden" name="subject_id" value="<?= $subject['id'] ?>">
-                                        <select name="staff_id" required class="border border-gray-300 rounded p-1 text-sm focus:ring-school-blue focus:border-school-blue">
+                                        <select name="staff_id" aria-label="Select Subject Teacher for <?= e($subject['name']) ?>" required class="border border-gray-300 rounded p-1 text-sm focus:ring-school-blue focus:border-school-blue">
                                             <option value="">-- Select Teacher --</option>
                                             <?php foreach ($staff as $st): ?>
                                                 <option value="<?= $st['id'] ?>">

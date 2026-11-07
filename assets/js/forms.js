@@ -10,13 +10,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Disable buttons on submit to prevent double submission
+    // Disable buttons on POST submit to prevent double submission (ignore GET filter forms)
     const forms = document.querySelectorAll('form:not([data-no-disable])');
     forms.forEach(form => {
-        form.addEventListener('submit', () => {
+        form.addEventListener('submit', (e) => {
+            if (e.defaultPrevented) {
+                return;
+            }
+            const method = (form.getAttribute('method') || form.method || 'GET').toUpperCase();
+            if (method !== 'POST') {
+                return;
+            }
             const submitBtns = form.querySelectorAll('button[type="submit"]');
             submitBtns.forEach(btn => {
-                // Short timeout to allow form submission to proceed before disabling
                 setTimeout(() => {
                     btn.disabled = true;
                     if (!btn.getAttribute('data-original-text')) {
@@ -28,3 +34,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+
+// Restore disabled submit buttons when navigating back via browser bfcache
+window.addEventListener('pageshow', () => {
+    document.querySelectorAll('button[type="submit"][data-original-text]').forEach(btn => {
+        btn.disabled = false;
+        btn.innerHTML = btn.getAttribute('data-original-text');
+    });
+});
+

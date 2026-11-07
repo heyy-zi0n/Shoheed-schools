@@ -42,7 +42,21 @@ try {
     $userId = current_user_id(); // for audit logs
     
     $pdo->beginTransaction();
-    
+
+    // Lock and validate batch ownership & status first
+    $bStmt = $pdo->prepare("SELECT * FROM result_batches WHERE id = ? FOR UPDATE");
+    $bStmt->execute([$batchId]);
+    $batchRow = $bStmt->fetch();
+
+    if (!$batchRow || (int)$batchRow['class_id'] !== (int)$classId || (int)$batchRow['academic_session_id'] !== (int)$activeSession['id']) {
+        throw new Exception("Result batch not found or does not match the selected class.");
+    }
+
+    $currentBatchStatus = $batchRow['status'] ?: 'DRAFT';
+    if (!in_array($currentBatchStatus, ['DRAFT', 'SUBMITTED', 'REVISION_REQUIRED'], true)) {
+        throw new Exception("This result batch has already been verified, approved, or published.");
+    }
+
     // Check if ALL subjects are SUBMITTED
     $stmt = $pdo->prepare("
         SELECT s.id, s.name, ss.status
@@ -53,7 +67,7 @@ try {
     ");
     $stmt->execute(['batch_id' => $batchId, 'class_id' => $classId]);
     $subjects = $stmt->fetchAll();
-    
+
     $allSubmitted = true;
     foreach ($subjects as $sub) {
         if ($sub['status'] !== 'SUBMITTED') {
@@ -61,23 +75,28 @@ try {
             break;
         }
     }
-    
+
     if (!$allSubmitted || empty($subjects)) {
         throw new Exception("Cannot verify class. All expected subjects must be SUBMITTED.");
     }
-    
-    // Get current batch status for history
-    $bStmt = $pdo->prepare("SELECT status FROM result_batches WHERE id = ? FOR UPDATE");
-    $bStmt->execute([$batchId]);
-    $currentBatchStatus = $bStmt->fetchColumn() ?: 'DRAFT';
 
     // Update batch
     $stmt = $pdo->prepare("UPDATE result_batches SET status = 'CLASS_TEACHER_VERIFIED', verified_by = ?, verified_at = NOW() WHERE id = ?");
     $stmt->execute([$staffId, $batchId]);
-    
-    // Log history
+
+    // Log workflow history
     $histStmt = $pdo->prepare("INSERT INTO result_workflow_history (result_batch_id, user_id, previous_status, new_status, comments) VALUES (?, ?, ?, ?, ?)");
     $histStmt->execute([$batchId, $userId, $currentBatchStatus, 'CLASS_TEACHER_VERIFIED', "Class teacher verified results."]);
+
+    // Log audit entry
+    log_audit(
+        $pdo,
+        (int)$userId,
+        'VERIFY_CLASS_RESULTS',
+        'result_batch',
+        (int)$batchId,
+        "Class teacher (staff ID {$staffId}) verified results for class ID {$classId} (batch #{$batchId})."
+    );
     
     // Notify principals
     $prStmt = $pdo->prepare("SELECT u.id as user_id FROM staff s JOIN users u ON s.user_id = u.id JOIN roles r ON u.role_id = r.id WHERE r.name = ?");

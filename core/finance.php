@@ -6,6 +6,46 @@
  */
 
 /**
+ * Generates a deterministic, collision-free receipt number from an auto-increment payment ID.
+ */
+function format_receipt_number(int $paymentId): string {
+    return 'REC-' . date('ym') . '-' . str_pad((string)$paymentId, 5, '0', STR_PAD_LEFT);
+}
+
+/**
+ * Recalculates and updates a student invoice's status ('PENDING', 'PARTIAL', 'PAID')
+ * based on verified payments vs. total_amount.
+ */
+function recalculate_invoice_status(PDO $pdo, int $invoiceId): string {
+    $invStmt = $pdo->prepare("SELECT total_amount, status FROM student_invoices WHERE id = ?");
+    $invStmt->execute([$invoiceId]);
+    $inv = $invStmt->fetch();
+    if (!$inv) {
+        throw new Exception("Invoice not found.");
+    }
+
+    $paidStmt = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE student_invoice_id = ?");
+    $paidStmt->execute([$invoiceId]);
+    $paid = (float)$paidStmt->fetchColumn();
+    $total = (float)$inv['total_amount'];
+
+    if ($paid <= 0) {
+        $newStatus = 'PENDING';
+    } elseif ($paid < $total) {
+        $newStatus = 'PARTIAL';
+    } else {
+        $newStatus = 'PAID';
+    }
+
+    if ($inv['status'] !== $newStatus) {
+        $updStmt = $pdo->prepare("UPDATE student_invoices SET status = ? WHERE id = ?");
+        $updStmt->execute([$newStatus, $invoiceId]);
+    }
+
+    return $newStatus;
+}
+
+/**
  * Records an official verified payment and generates a receipt.
  * 
  * Must be called within a database transaction context if caller is combining actions.
@@ -48,18 +88,12 @@ function record_official_payment(PDO $pdo, int $invoiceId, float $amount, string
     $paymentId = $pdo->lastInsertId();
     
     // 4. Generate Receipt
-    $receiptNo = 'REC-' . date('ym') . '-' . str_pad($paymentId, 5, '0', STR_PAD_LEFT);
+    $receiptNo = format_receipt_number((int)$paymentId);
     $stmt = $pdo->prepare("INSERT INTO receipts (payment_id, receipt_number) VALUES (?, ?)");
     $stmt->execute([$paymentId, $receiptNo]);
     
     // 5. Update Invoice Status
-    $newPaid = $currentPaid + $amount;
-    $newStatus = ($newPaid >= $total) ? 'PAID' : 'PARTIAL';
-    
-    if ($invoice['status'] !== $newStatus) {
-        $stmt = $pdo->prepare("UPDATE student_invoices SET status = ? WHERE id = ?");
-        $stmt->execute([$newStatus, $invoiceId]);
-    }
+    recalculate_invoice_status($pdo, $invoiceId);
     
     // 6. Audit Log
     $auditStmt = $pdo->prepare("INSERT INTO audit_logs (user_id, action, entity_type, entity_id, description) VALUES (?, ?, ?, ?, ?)");

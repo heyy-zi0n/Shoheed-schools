@@ -14,7 +14,6 @@ $student = $stmt->fetch();
 
 $activeSession = get_active_academic_session();
 $sessionId = $activeSession['id'] ?? null;
-$activeSession = get_active_academic_session();
 $activeTerm = $activeSession ? get_active_term($activeSession['id']) : null;
 $term = $activeTerm ? $activeTerm['name'] : 'Current Term';
 

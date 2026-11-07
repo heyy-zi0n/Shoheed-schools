@@ -15,21 +15,27 @@
                 
                 <div>
                     <h3 class="text-sm font-bold tracking-widest uppercase mb-6 text-gray-300">Headquarters</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed mb-4">
+                    <p class="text-gray-400 text-sm leading-relaxed mb-3">
                         5, Olufunmilayo Close,<br>
                         Opposite Jendol Super Store,<br>
                         Alakuko/Alagbado, Lagos.
                     </p>
+                    <a href="https://www.google.com/maps/search/?api=1&query=5+Olufunmilayo+Close+Opposite+Jendol+Super+Store+Alakuko+Alagbado+Lagos" target="_blank" rel="noopener noreferrer" class="text-xs text-school-gold hover:text-white transition-colors inline-flex items-center">
+                        View on Google Maps &rarr;
+                    </a>
                 </div>
                 
                 <div>
                     <h3 class="text-sm font-bold tracking-widest uppercase mb-6 text-gray-300">Annex</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed mb-4">
+                    <p class="text-gray-400 text-sm leading-relaxed mb-3">
                         Andiri Bus Stop,<br>
                         Ibaragun,<br>
                         Abule Lemode,<br>
                         Ogun State.
                     </p>
+                    <a href="https://www.google.com/maps/search/?api=1&query=Andiri+Bus+Stop+Ibaragun+Abule+Lemode+Ogun+State" target="_blank" rel="noopener noreferrer" class="text-xs text-school-gold hover:text-white transition-colors inline-flex items-center">
+                        View on Google Maps &rarr;
+                    </a>
                 </div>
                 
                 <div>
@@ -61,9 +67,8 @@
             </div>
         </div>
     </footer>
-    <script src="<?= url('assets/js/app.js') ?>"></script>
-    <script src="<?= url('assets/js/forms.js') ?>"></script>
-    <script src="<?= url('assets/js/modals.js') ?>"></script>
-    <script src="<?= url('assets/js/results.js') ?>"></script>
+    <script src="<?= url('assets/js/app.js') ?>?v=<?= filemtime(__DIR__ . '/../../assets/js/app.js') ?>"></script>
+    <script src="<?= url('assets/js/forms.js') ?>?v=<?= filemtime(__DIR__ . '/../../assets/js/forms.js') ?>"></script>
+    <script src="<?= url('assets/js/modals.js') ?>?v=<?= filemtime(__DIR__ . '/../../assets/js/modals.js') ?>"></script>
 </body>
 </html>

@@ -17,7 +17,7 @@ $userId = current_user_id();
 $userRole = current_user_role();
 
 // Only staff can update this info currently
-if (!in_array($userRole, ['ROLE_ADMIN', 'ROLE_PRINCIPAL', 'ROLE_CLASS_TEACHER', 'ROLE_SUBJECT_TEACHER', 'ROLE_BURSAR'])) {
+if (!in_array($userRole, [ROLE_ADMIN, ROLE_PRINCIPAL, ROLE_CLASS_TEACHER, ROLE_SUBJECT_TEACHER, ROLE_BURSAR], true)) {
     set_flash('error', 'Unauthorized.');
     redirect('profile/index.php');
 }

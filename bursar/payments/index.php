@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../../config/bootstrap.php';
 
 require_role([ROLE_BURSAR]);
@@ -7,7 +7,7 @@ $pageTitle = 'Payments & Receipts';
 $pdo = get_db_connection();
 
 $stmt = $pdo->query("
-    SELECT p.*, si.total_amount, s.first_name, s.last_name, s.admission_number, r.receipt_number
+    SELECT p.*, si.total_amount, s.first_name, s.last_name, s.admission_number, r.id AS receipt_id, r.receipt_number
     FROM payments p
     JOIN student_invoices si ON p.student_invoice_id = si.id
     JOIN students s ON si.student_id = s.id
@@ -43,6 +43,7 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-gray uppercase tracking-wider">Student</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-gray uppercase tracking-wider">Method</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-gray uppercase tracking-wider">Amount</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-gray uppercase tracking-wider">Receipt</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -52,7 +53,13 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                                     <?= e($payment['payment_date']) ?>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-school-blue">
-                                    <?= e($payment['receipt_number'] ?? 'N/A') ?>
+                                    <?php if (!empty($payment['receipt_id'])): ?>
+                                        <a href="<?= url('bursar/receipts/view.php?id=' . (int)$payment['receipt_id']) ?>" class="hover:underline">
+                                            <?= e($payment['receipt_number']) ?>
+                                        </a>
+                                    <?php else: ?>
+                                        <?= e($payment['receipt_number'] ?? 'N/A') ?>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm font-medium text-charcoal"><?= e($payment['last_name'] . ', ' . $payment['first_name']) ?></div>
@@ -67,11 +74,18 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">
                                     ₦<?= number_format((float)$payment['amount'], 2) ?>
                                 </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <?php if (!empty($payment['receipt_id'])): ?>
+                                        <a href="<?= url('bursar/receipts/view.php?id=' . (int)$payment['receipt_id']) ?>" class="text-school-blue hover:text-school-navy">View / Print</a>
+                                    <?php else: ?>
+                                        <span class="text-slate-gray text-xs">—</span>
+                                    <?php endif; ?>
+                                </td>
                             </tr>
                             <?php endforeach; ?>
                             <?php if (empty($payments)): ?>
                             <tr>
-                                <td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm text-slate-gray text-center">No payments recorded yet.</td>
+                                <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-slate-gray text-center">No payments recorded yet.</td>
                             </tr>
                             <?php endif; ?>
                         </tbody>

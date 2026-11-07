@@ -40,29 +40,50 @@ if (!$isPublic) {
     }
 }
 
-// Serve the file
-$relativePath = $staff['profile_image'];
-// Ensure path starts with storage/profiles/
-$normalised = str_replace('\\', '/', $relativePath);
-if (!str_starts_with($normalised, 'storage/profiles/')) {
-    http_response_code(403);
-    exit('Access denied.');
+// Serve the file (supports both storage/profiles/... and legacy storage/staff_profiles/...)
+$relativePath = (string)$staff['profile_image'];
+$normalised = ltrim(str_replace('\\', '/', $relativePath), '/');
+
+$realPath = false;
+$storageReal = false;
+
+if (str_starts_with($normalised, 'storage/profiles/')) {
+    $storageReal = realpath(__DIR__ . '/../storage/profiles/');
+    $realPath = realpath(__DIR__ . '/../' . $normalised);
+} elseif (str_starts_with($normalised, 'storage/staff_profiles/')) {
+    $storageReal = realpath(__DIR__ . '/../storage/staff_profiles/');
+    $realPath = realpath(__DIR__ . '/../' . $normalised);
+} elseif (!str_contains($normalised, '/')) {
+    // Check storage/staff_profiles/ first, then storage/profiles/
+    $safeBase = basename($normalised);
+    $candStaff = realpath(__DIR__ . '/../storage/staff_profiles/' . $safeBase);
+    if ($candStaff && is_file($candStaff)) {
+        $storageReal = realpath(__DIR__ . '/../storage/staff_profiles/');
+        $realPath = $candStaff;
+    } else {
+        $storageReal = realpath(__DIR__ . '/../storage/profiles/');
+        $realPath = realpath(__DIR__ . '/../storage/profiles/' . $safeBase);
+    }
 }
 
-$absolutePath = __DIR__ . '/../' . $normalised;
-$realPath = realpath($absolutePath);
-$storageReal = realpath(__DIR__ . '/../storage/profiles/');
-
-if (!$realPath || !$storageReal || !str_starts_with($realPath, $storageReal) || !file_exists($realPath)) {
+if (!$realPath || !$storageReal || !str_starts_with($realPath, $storageReal) || !is_file($realPath)) {
     http_response_code(404);
     exit('Image not found.');
 }
 
 $finfo = new finfo(FILEINFO_MIME_TYPE);
-$mime = $finfo->file($realPath);
+$mime = (string)$finfo->file($realPath);
+$allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+if (!in_array($mime, $allowedMimes, true)) {
+    http_response_code(403);
+    exit('Forbidden file type.');
+}
 
 header('Content-Type: ' . $mime);
 header('Content-Length: ' . filesize($realPath));
-header('Cache-Control: max-age=86400, public');
+header('Content-Disposition: inline; filename="' . addslashes(basename($realPath)) . '"');
+header('X-Content-Type-Options: nosniff');
+header("Content-Security-Policy: default-src 'none'; img-src 'self' data:; sandbox");
+header('Cache-Control: ' . ($isPublic ? 'public, max-age=86400' : 'private, max-age=3600'));
 readfile($realPath);
 exit;

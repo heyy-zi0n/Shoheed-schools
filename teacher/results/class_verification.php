@@ -17,7 +17,8 @@ $activeSession = get_active_academic_session();
 $activeTerm = $activeSession ? get_active_term($activeSession['id']) : null;
 
 if (!$activeSession || !$activeTerm) {
-    die("No active session or term.");
+    set_flash('error', 'No active academic session or term is configured.');
+    redirect('teacher/dashboard.php');
 }
 
 $classId = filter_input(INPUT_GET, 'class', FILTER_VALIDATE_INT);
@@ -33,7 +34,8 @@ $stmt->execute(['staff_id' => $staffId, 'session_id' => $activeSession['id']]);
 $assignedClasses = $stmt->fetchAll();
 
 if (empty($assignedClasses)) {
-    die("You are not assigned as a Class Teacher for the current session.");
+    set_flash('error', 'You are not assigned as a Class Teacher for the current session.');
+    redirect('teacher/dashboard.php');
 }
 
 if (!$classId) {
@@ -52,19 +54,27 @@ foreach ($assignedClasses as $ac) {
 }
 
 if (!$isAssigned) {
-    die("You are not the assigned Class Teacher for this class.");
+    set_flash('error', 'You are not the assigned Class Teacher for this class.');
+    redirect('teacher/dashboard.php');
 }
 
-// Get or initialize batch for this class/session/term
+// Get batch for this class/session/term (do not mutate DB on GET request)
 $stmt = $pdo->prepare("SELECT * FROM result_batches WHERE class_id = :cid AND academic_session_id = :sid AND term_id = :tid");
 $stmt->execute(['cid' => $classId, 'sid' => $activeSession['id'], 'tid' => $activeTerm['id']]);
 $batch = $stmt->fetch();
 
 if (!$batch) {
-    $insBatch = $pdo->prepare("INSERT INTO result_batches (class_id, academic_session_id, term_id, status) VALUES (?, ?, ?, 'DRAFT')");
-    $insBatch->execute([$classId, $activeSession['id'], $activeTerm['id']]);
-    $stmt->execute(['cid' => $classId, 'sid' => $activeSession['id'], 'tid' => $activeTerm['id']]);
-    $batch = $stmt->fetch();
+    $batch = [
+        'id' => 0,
+        'class_id' => $classId,
+        'academic_session_id' => $activeSession['id'],
+        'term_id' => $activeTerm['id'],
+        'status' => 'DRAFT',
+        'term_begins' => null,
+        'term_ends' => null,
+        'next_term_begins' => null,
+        'duration_weeks' => 14,
+    ];
 }
 
 $batchStatus = $batch['status'];
@@ -262,6 +272,7 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                     <form action="<?= url('actions/results/save_evaluations.php') ?>" method="POST" class="bg-paper p-6 rounded-lg shadow-sm border border-gray-100">
                         <?= csrf_field() ?>
                         <input type="hidden" name="batch_id" value="<?= $batchId ?>">
+                        <input type="hidden" name="class_id" value="<?= $classId ?>">
                         <input type="hidden" name="return_url" value="<?= e("teacher/results/class_verification.php?class={$classId}") ?>">
 
                         <div class="flex flex-wrap justify-between items-center gap-4 border-b border-gray-200 pb-4 mb-6">

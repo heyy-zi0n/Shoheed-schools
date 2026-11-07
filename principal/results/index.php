@@ -7,7 +7,6 @@ $pageTitle = 'Result Approvals';
 $pdo = get_db_connection();
 
 $activeSession = get_active_academic_session();
-$activeSession = get_active_academic_session();
 $activeTerm = $activeSession ? get_active_term($activeSession['id']) : null;
 
 $sessions = get_all_academic_sessions();
@@ -15,7 +14,7 @@ $terms = $pdo->query("SELECT * FROM terms ORDER BY name ASC")->fetchAll();
 
 $sessionId = filter_var($_GET['academic_session_id'] ?? ($activeSession['id'] ?? null), FILTER_VALIDATE_INT);
 $termId = filter_var($_GET['term_id'] ?? ($activeTerm['id'] ?? null), FILTER_VALIDATE_INT);
-$status = filter_input(INPUT_GET, 'status', FILTER_SANITIZE_STRING) ?: '';
+$status = trim((string)($_GET['status'] ?? ''));
 
 $batches = [];
 if ($sessionId && $termId) {
@@ -67,24 +66,24 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
             <div class="bg-paper rounded-lg shadow-sm border border-gray-100 p-6 mb-6">
                 <form action="<?= url('principal/results/index.php') ?>" method="GET" class="flex flex-wrap gap-4 items-end">
                     <div class="w-full md:w-1/4">
-                        <label class="block text-xs font-bold text-slate-gray uppercase tracking-wider mb-2">Session</label>
-                        <select name="academic_session_id" class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-school-blue">
+                        <label for="filter_session_id" class="block text-xs font-bold text-slate-gray uppercase tracking-wider mb-2">Session</label>
+                        <select id="filter_session_id" name="academic_session_id" class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-school-blue">
                             <?php foreach ($sessions as $s): ?>
                                 <option value="<?= $s['id'] ?>" <?= $s['id'] == $sessionId ? 'selected' : '' ?>><?= e($s['name']) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="w-full md:w-1/4">
-                        <label class="block text-xs font-bold text-slate-gray uppercase tracking-wider mb-2">Term</label>
-                        <select name="term_id" class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-school-blue">
+                        <label for="filter_term_id" class="block text-xs font-bold text-slate-gray uppercase tracking-wider mb-2">Term</label>
+                        <select id="filter_term_id" name="term_id" class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-school-blue">
                             <?php foreach ($terms as $t): ?>
                                 <option value="<?= $t['id'] ?>" <?= $t['id'] == $termId ? 'selected' : '' ?>><?= e($t['name']) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="w-full md:w-1/4">
-                        <label class="block text-xs font-bold text-slate-gray uppercase tracking-wider mb-2">Status</label>
-                        <select name="status" class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-school-blue">
+                        <label for="filter_status" class="block text-xs font-bold text-slate-gray uppercase tracking-wider mb-2">Status</label>
+                        <select id="filter_status" name="status" class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-school-blue">
                             <option value="">All Relevant</option>
                             <option value="SUBMITTED" <?= $status === 'SUBMITTED' ? 'selected' : '' ?>>Submitted</option>
                             <option value="CLASS_TEACHER_VERIFIED" <?= $status === 'CLASS_TEACHER_VERIFIED' ? 'selected' : '' ?>>Teacher Verified</option>

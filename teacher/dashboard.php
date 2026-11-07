@@ -8,18 +8,17 @@ $pdo = get_db_connection();
 $staffId = current_staff_id();
 $userId = current_user_id();
 $activeSession = get_active_academic_session();
+$activeTerm = $activeSession ? get_active_term($activeSession['id']) : null;
 
 if (!$staffId || !$activeSession) {
-    // If not a valid state, fall back to empty page
-    require __DIR__ . '/../templates/layouts/app-header.php';
-    echo '<div class="flex h-screen"><div class="flex-1 p-6">Active session or staff profile missing.</div></div>';
-    exit;
+    set_flash('error', 'Active academic session or staff profile is missing.');
+    redirect('profile/index.php');
 }
 
 // 1. Fetch Class Teacher Assignments
 $ctStmt = $pdo->prepare("
     SELECT c.id, c.name, c.level,
-           (SELECT COUNT(*) FROM student_enrollments se WHERE se.class_id = c.id AND se.academic_session_id = ?) as student_count
+           (SELECT COUNT(*) FROM student_enrollments se WHERE se.class_id = c.id AND se.academic_session_id = ? AND se.status IN ('ACTIVE', 'PROMOTED', 'REPEATED')) as student_count
     FROM class_teacher_assignments cta
     JOIN classes c ON cta.class_id = c.id
     WHERE cta.staff_id = ? AND cta.academic_session_id = ?
@@ -27,7 +26,8 @@ $ctStmt = $pdo->prepare("
 $ctStmt->execute([$activeSession['id'], $staffId, $activeSession['id']]);
 $classAssignments = $ctStmt->fetchAll();
 
-// 2. Fetch Subject Teacher Assignments with batch status
+// 2. Fetch Subject Teacher Assignments with batch status for the active term
+$activeTermId = $activeTerm ? (int)$activeTerm['id'] : 0;
 $stStmt = $pdo->prepare("
     SELECT c.id as class_id, c.name as class_name, s.id as subject_id, s.name as subject_name,
            rb.id as batch_id, rb.status as batch_status,
@@ -35,12 +35,12 @@ $stStmt = $pdo->prepare("
     FROM subject_teacher_assignments sta
     JOIN classes c ON sta.class_id = c.id
     JOIN subjects s ON sta.subject_id = s.id
-    LEFT JOIN result_batches rb ON rb.class_id = c.id AND rb.academic_session_id = sta.academic_session_id
+    LEFT JOIN result_batches rb ON rb.class_id = c.id AND rb.academic_session_id = sta.academic_session_id AND rb.term_id = ?
     LEFT JOIN subject_submissions ss ON ss.result_batch_id = rb.id AND ss.subject_id = s.id
     WHERE sta.staff_id = ? AND sta.academic_session_id = ?
     ORDER BY c.level ASC, s.name ASC
 ");
-$stStmt->execute([$staffId, $activeSession['id']]);
+$stStmt->execute([$activeTermId, $staffId, $activeSession['id']]);
 $subjectAssignments = $stStmt->fetchAll();
 
 // 3. Pending Tasks Calculation
@@ -219,8 +219,8 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                                         </div>
                                     </div>
                                     <div class="grid grid-cols-2 gap-2 mt-4">
-                                        <a href="<?= url('teacher/attendance/index.php') ?>" class="text-center py-2 px-3 bg-gray-50 hover:bg-school-blue hover:text-white border border-gray-200 rounded text-xs font-bold text-charcoal transition-colors">Attendance</a>
-                                        <a href="<?= url('teacher/results/class_verification.php') ?>" class="text-center py-2 px-3 bg-gray-50 hover:bg-school-gold hover:text-school-navy border border-gray-200 rounded text-xs font-bold text-charcoal transition-colors">Verify Results</a>
+                                        <a href="<?= url('teacher/attendance/index.php?class=' . (int)$ca['id']) ?>" class="text-center py-2 px-3 bg-gray-50 hover:bg-school-blue hover:text-white border border-gray-200 rounded text-xs font-bold text-charcoal transition-colors">Attendance</a>
+                                        <a href="<?= url('teacher/results/class_verification.php?class=' . (int)$ca['id']) ?>" class="text-center py-2 px-3 bg-gray-50 hover:bg-school-gold hover:text-school-navy border border-gray-200 rounded text-xs font-bold text-charcoal transition-colors">Verify Results</a>
                                     </div>
                                 </div>
                             <?php endforeach; ?>

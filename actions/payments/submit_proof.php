@@ -93,35 +93,16 @@ if ($transferRef !== '') {
     }
 }
 
-// Handle File Upload
-if (!isset($_FILES['proof']) || $_FILES['proof']['error'] !== UPLOAD_ERR_OK) {
+// Handle File Upload using strict server-side MIME & magic-byte validation
+if (!isset($_FILES['proof'])) {
     set_flash('error', 'Please upload a valid proof of payment file.');
     redirect('student/fees.php#submit-proof');
 }
 
-$file = $_FILES['proof'];
-$allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
-if (!in_array($file['type'], $allowedTypes)) {
-    set_flash('error', 'Invalid file type. Only JPG, PNG, and PDF are allowed.');
-    redirect('student/fees.php#submit-proof');
-}
-
-if ($file['size'] > 5 * 1024 * 1024) { // 5MB
-    set_flash('error', 'File size exceeds 5MB limit.');
-    redirect('student/fees.php#submit-proof');
-}
-
-$uploadDir = dirname(__DIR__, 2) . '/storage/payment_proofs';
-if (!is_dir($uploadDir)) {
-    mkdir($uploadDir, 0755, true);
-}
-
-$ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-$filename = uniqid('proof_') . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
-$destPath = $uploadDir . '/' . $filename;
-
-if (!move_uploaded_file($file['tmp_name'], $destPath)) {
-    set_flash('error', 'Failed to save uploaded file.');
+try {
+    $filename = handle_proof_upload($_FILES['proof']);
+} catch (RuntimeException $e) {
+    set_flash('error', $e->getMessage());
     redirect('student/fees.php#submit-proof');
 }
 
@@ -141,6 +122,15 @@ try {
     ]);
 
     $submissionId = $pdo->lastInsertId();
+
+    log_audit(
+        $pdo,
+        (int)$userId,
+        'SUBMIT_PAYMENT_PROOF',
+        'payment_submission',
+        (int)$submissionId,
+        "Student ID {$studentId} submitted payment proof of ₦" . number_format($amount, 2) . " for invoice #{$invoiceId}."
+    );
 
     // Student is not notified on submission; they are notified when Bursar verifies the payment.
 
@@ -172,9 +162,7 @@ try {
 } catch (Exception $e) {
     $pdo->rollBack();
     // Cleanup file on DB failure
-    if (file_exists($destPath)) {
-        unlink($destPath);
-    }
+    delete_proof_file($filename);
     error_log("Payment submission failed: " . $e->getMessage());
     set_flash('error', 'A database error occurred. Your submission was not saved.');
 }

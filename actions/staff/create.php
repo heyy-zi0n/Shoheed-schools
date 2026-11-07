@@ -16,7 +16,12 @@ if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
 $portalAccess = $_POST['portal_access'] ?? 'PORTAL_ENABLED';
 
 $firstName = trim($_POST['first_name'] ?? '');
+$middleName = trim($_POST['middle_name'] ?? '');
 $lastName = trim($_POST['last_name'] ?? '');
+$gender = trim($_POST['gender'] ?? 'Male');
+if (!in_array($gender, ['Male', 'Female'], true)) {
+    $gender = 'Male';
+}
 $phone = trim($_POST['phone'] ?? '');
 $address = trim($_POST['address'] ?? '');
 
@@ -96,15 +101,20 @@ try {
         $userId = $pdo->lastInsertId();
     }
     
+    $profileImagePath = null;
+    if (isset($_FILES['profile_image']) && ($_FILES['profile_image']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+        $profileImagePath = handle_profile_upload($_FILES['profile_image']);
+    }
+
     // 2. Create Staff Profile
     $stmt = $pdo->prepare("
         INSERT INTO staff (
-            user_id, first_name, last_name, phone, address, 
+            user_id, first_name, middle_name, last_name, gender, phone, address, profile_image,
             can_teach_subjects, can_be_class_teacher,
             staff_category, public_designation, short_bio, qualification, 
             public_email, public_phone, show_in_directory, display_order
         ) VALUES (
-            :user_id, :first, :last, :phone, :address, 
+            :user_id, :first, :middle, :last, :gender, :phone, :address, :p_img,
             :teach, :class_t,
             :cat, :desig, :bio, :qual, 
             :p_email, :p_phone, :show, :d_order
@@ -113,9 +123,12 @@ try {
     $stmt->execute([
         'user_id' => $userId, // null for directory-only
         'first' => $firstName,
+        'middle' => $middleName !== '' ? $middleName : null,
         'last' => $lastName,
+        'gender' => $gender,
         'phone' => $phone !== '' ? $phone : null,
         'address' => $address !== '' ? $address : null,
+        'p_img' => $profileImagePath,
         'teach' => $canTeachSubjects,
         'class_t' => $canBeClassTeacher,
         'cat' => $staffCategory,
