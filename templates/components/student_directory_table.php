@@ -16,7 +16,7 @@ $totalRows  = $directoryResult['total'];
 $totalPages = $directoryResult['pages'];
 $curPage    = $directoryResult['page'];
 ?>
-<div class="bg-paper p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100 mb-6">
+<search class="bg-paper p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200/80 mb-6 block">
     <form method="GET" action="<?= e($directoryActionUrl) ?>" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 items-end">
         <div class="lg:col-span-5">
             <label for="dir_search" class="block text-xs font-bold text-slate-gray uppercase tracking-wider mb-1">Search Student</label>
@@ -47,10 +47,10 @@ $curPage    = $directoryResult['page'];
             <?php endif; ?>
         </div>
     </form>
-</div>
+</search>
 
-<div class="bg-paper p-6 rounded-lg shadow-sm border border-gray-100">
-    <div class="flex justify-between items-center mb-4 text-xs text-slate-gray">
+<div class="bg-paper p-6 rounded-lg shadow-sm border border-gray-200/80">
+    <div class="flex justify-between items-center mb-4 text-xs text-slate-gray tabular-nums">
         <span>Showing <strong><?= count($students) ?></strong> of <strong><?= number_format($totalRows) ?></strong> student<?= $totalRows === 1 ? '' : 's' ?></span>
         <?php if ($totalPages > 1): ?>
             <span>Page <?= $curPage ?> of <?= $totalPages ?></span>
@@ -59,29 +59,29 @@ $curPage    = $directoryResult['page'];
 
     <div class="overflow-x-auto" role="region" aria-label="Student directory table" tabindex="0">
         <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+            <thead class="bg-ivory/70">
                 <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-gray uppercase tracking-wider">Admission No.</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-gray uppercase tracking-wider">Name</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-gray uppercase tracking-wider">Gender</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-gray uppercase tracking-wider">Current Class</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-gray uppercase tracking-wider">Status</th>
-                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-gray uppercase tracking-wider">Actions</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-slate-gray uppercase tracking-wider">Admission No.</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-slate-gray uppercase tracking-wider">Name</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-slate-gray uppercase tracking-wider">Gender</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-slate-gray uppercase tracking-wider">Current Class</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-slate-gray uppercase tracking-wider">Status</th>
+                    <th scope="col" class="px-6 py-3 text-right text-xs font-bold text-slate-gray uppercase tracking-wider">Actions</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
                 <?php foreach ($students as $student): ?>
-                <tr class="hover:bg-gray-50">
+                <tr class="hover:bg-ivory/40 transition-colors">
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-charcoal font-mono">
                         <?= e($student['admission_number']) ?>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center">
-                            <div class="flex-shrink-0 h-8 w-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 font-bold text-xs">
+                            <div class="flex-shrink-0 h-8 w-8 bg-ivory border border-gray-200 rounded-full flex items-center justify-center text-school-navy font-bold text-xs">
                                 <?= e(substr((string)$student['first_name'], 0, 1) . substr((string)$student['last_name'], 0, 1)) ?>
                             </div>
-                            <div class="ml-4">
-                                <div class="text-sm font-medium text-charcoal"><?= e($student['last_name'] . ', ' . $student['first_name'] . ' ' . ($student['middle_name'] ?? '')) ?></div>
+                            <div class="ml-3.5">
+                                <div class="text-sm font-semibold text-charcoal"><?= e($student['last_name'] . ', ' . $student['first_name'] . ' ' . ($student['middle_name'] ?? '')) ?></div>
                             </div>
                         </div>
                     </td>
@@ -93,15 +93,15 @@ $curPage    = $directoryResult['page'];
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <?php if ($student['status'] === 'ACTIVE'): ?>
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-sage text-white">Active</span>
+                            <span class="status-badge status-badge-success"><span class="w-1.5 h-1.5 rounded-full bg-sage" aria-hidden="true"></span>Active</span>
                         <?php elseif ($student['status'] === 'GRADUATED'): ?>
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-school-blue text-white">Graduated</span>
+                            <span class="status-badge status-badge-info"><span class="w-1.5 h-1.5 rounded-full bg-school-blue" aria-hidden="true"></span>Graduated</span>
                         <?php else: ?>
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-dusty-red text-white"><?= e($student['status']) ?></span>
+                            <span class="status-badge status-badge-danger"><span class="w-1.5 h-1.5 rounded-full bg-dusty-red" aria-hidden="true"></span><?= e(ucfirst(strtolower((string)$student['status']))) ?></span>
                         <?php endif; ?>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <a href="<?= url($studentViewBaseUrl . '?id=' . (int)$student['id']) ?>" class="text-school-blue hover:text-school-navy">View</a>
+                        <a href="<?= url($studentViewBaseUrl . '?id=' . (int)$student['id']) ?>" class="text-school-blue hover:text-school-navy font-semibold">View Record &rarr;</a>
                     </td>
                 </tr>
                 <?php endforeach; ?>

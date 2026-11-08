@@ -53,32 +53,34 @@ require __DIR__ . '/../templates/layouts/app-header.php';
         <main class="flex-1 overflow-x-hidden overflow-y-auto bg-ivory p-6">
             <?php require __DIR__ . '/../templates/components/alert.php'; ?>
             
-            <!-- Hero Section -->
-            <div class="mb-8 bg-school-navy rounded-xl p-8 text-white shadow-md relative overflow-hidden">
-                <div class="relative z-10">
-                    <h1 class="text-3xl font-serif font-bold mb-2">Finance Overview</h1>
-                    <p class="text-blue-200">Monitor collections, outstanding balances, and recent payments.</p>
+            <!-- Institutional Workspace Header -->
+            <div class="page-header">
+                <div>
+                    <p class="page-eyebrow">Finance &amp; Accounts</p>
+                    <h1 class="text-2xl sm:text-3xl font-serif font-bold text-school-navy mt-1">Finance Overview</h1>
+                    <p class="text-sm text-slate-gray mt-1">Monitor fee collections, outstanding student balances, and bank transfer verifications.</p>
                 </div>
-                <div class="absolute top-0 right-0 -mt-8 w-48 h-48 bg-sage opacity-20 rounded-full blur-2xl"></div>
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <a href="<?= url('bursar/payments/create.php') ?>" class="bg-school-blue text-white px-4 py-2 rounded-md text-xs sm:text-sm font-semibold hover:bg-school-navy transition-colors shadow-sm">+ Record Payment</a>
+                    <a href="<?= url('bursar/payments/submissions.php') ?>" class="bg-paper text-school-navy border border-gray-300 px-4 py-2 rounded-md text-xs sm:text-sm font-semibold hover:bg-gray-50 transition-colors">Review Transfers</a>
+                </div>
             </div>
             
             <!-- Metrics Row -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 mb-8">
                 <?php 
                 if ($financeAvailable) {
-                    render_metric('Total Invoices', $totalInvoices, null, 'school-blue', url('bursar/invoices/index.php'));
-                    render_metric('Outstanding Amount', '₦' . number_format((float)$outstandingAmount), null, 'school-red', url('bursar/invoices/index.php?status=outstanding'));
-                    render_metric('Amount Collected', '₦' . number_format((float)$amountCollected), null, 'sage', url('bursar/payments/index.php'));
-                    render_metric('Pending Verification', $pendingVerifications, null, $pendingVerifications > 0 ? 'school-gold' : 'slate-gray', url('bursar/payments/submissions.php'));
+                    render_metric('Total Invoices', $totalInvoices, 'Issued invoices', 'school-blue', url('bursar/invoices/index.php'));
+                    render_metric('Outstanding Amount', '₦' . number_format((float)$outstandingAmount), 'Unpaid balance', $outstandingAmount > 0 ? 'school-red' : 'sage', url('bursar/invoices/index.php?status=outstanding'));
+                    render_metric('Amount Collected', '₦' . number_format((float)$amountCollected), 'Verified receipts', 'sage', url('bursar/payments/index.php'));
+                    render_metric('Pending Transfers', $pendingVerifications, 'Awaiting verification', $pendingVerifications > 0 ? 'school-gold' : 'slate-gray', url('bursar/payments/submissions.php'));
                 } else {
                     render_metric('Total Invoices', 'Error', 'Data unavailable', 'school-blue');
                     render_metric('Outstanding Amount', 'Error', 'Data unavailable', 'school-red');
                     render_metric('Amount Collected', 'Error', 'Data unavailable', 'sage');
-                    render_metric('Pending Verification', 'Error', 'Data unavailable', 'school-gold');
+                    render_metric('Pending Transfers', 'Error', 'Data unavailable', 'school-gold');
                 }
-                render_metric('Unread Notifications', $unreadNotifs, null, 'school-navy', url('notifications.php'));
-                
-                
+                render_metric('Unread Notifications', $unreadNotifs, 'System alerts', $unreadNotifs > 0 ? 'school-navy' : 'slate-gray', url('notifications.php'));
                 ?>
             </div>
             

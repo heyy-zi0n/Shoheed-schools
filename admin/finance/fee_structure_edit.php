@@ -65,7 +65,7 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                     <h2 class="text-2xl font-serif font-bold text-school-navy mb-6"><?= $isReadOnly ? 'View Fee Structure' : 'Edit Fee Structure' ?></h2>
 
                     <?php if ($isUsed): ?>
-                        <div class="mb-6 bg-yellow-50 border-l-4 border-school-gold p-4">
+                        <div class="mb-6 bg-amber-50/70 border border-amber-200/80 p-4 rounded-lg">
                             <div class="flex">
                                 <div class="flex-shrink-0">
                                     <svg class="h-5 w-5 text-school-gold" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">

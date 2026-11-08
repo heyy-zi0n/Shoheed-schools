@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-school-navy: #111B3F;
+    --color-school-blue: #263B8F;
+    --color-school-red: #C62828;
+    --color-school-gold: #E5B926;
+    --color-ivory: #F5F1E8;
+    --color-paper: #FFFDFC;
+    --color-charcoal: #20242C;
+    --color-slate-gray: #697386;
+    --color-sage: #5D7A68;
+    --color-amber: #B7813B;
+    --color-dusty-red: #B95656;
+  }
+
+  body {
+    @apply bg-ivory text-charcoal antialiased font-sans;
+  }
+}
+
+@layer components {
+  .page-eyebrow {
+    @apply text-[11px] font-bold uppercase tracking-[0.16em] text-school-blue;
+  }
+
+  .page-header {
+    @apply mb-6 pb-5 border-b border-gray-200/80 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4;
+  }
+
+  .portal-panel {
+    @apply bg-paper rounded-lg shadow-sm border border-gray-200/80 overflow-hidden;
+  }
+
+  .portal-panel-header {
+    @apply px-6 py-4 border-b border-gray-100 bg-ivory/40 flex justify-between items-center;
+  }
+
+  .status-badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold border;
+  }
+
+  .status-badge-success {
+    @apply bg-green-50 text-sage border-green-200;
+  }
+
+  .status-badge-warning {
+    @apply bg-yellow-50 text-amber border-yellow-200;
+  }
+
+  .status-badge-danger {
+    @apply bg-red-50 text-dusty-red border-red-200;
+  }
+
+  .status-badge-info {
+    @apply bg-blue-50 text-school-blue border-blue-200;
+  }
+
+  .status-badge-neutral {
+    @apply bg-gray-100 text-slate-gray border-gray-200;
+  }
+}
+
+.flash-message {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.flash-message.flash-hide {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+button:hover:not(:disabled) {
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}

@@ -12,7 +12,6 @@ $studentsCount = $pdo->query("SELECT COUNT(*) FROM students")->fetchColumn();
 $staffCount = $pdo->query("SELECT COUNT(*) FROM staff")->fetchColumn();
 
 $activeSession = get_active_academic_session();
-$activeSession = get_active_academic_session();
 $activeTermRow = $activeSession ? get_active_term($activeSession['id']) : null;
 $activeTerm = $activeTermRow ? $activeTermRow['name'] : 'None';
 
@@ -43,29 +42,30 @@ require __DIR__ . '/../templates/layouts/app-header.php';
         <main class="flex-1 overflow-x-hidden overflow-y-auto bg-ivory p-6">
             <?php require __DIR__ . '/../templates/components/alert.php'; ?>
             
-            <!-- Hero Section -->
-            <div class="mb-8 bg-school-navy rounded-xl p-8 text-white shadow-md relative overflow-hidden">
-                <div class="relative z-10">
-                    <h1 class="text-3xl font-serif font-bold mb-2">Administrator Command Center</h1>
-                    <p class="text-blue-200">Manage students, staff, academics, and operations.</p>
+            <!-- Institutional Workspace Header -->
+            <div class="page-header">
+                <div>
+                    <p class="page-eyebrow">Overview</p>
+                    <h1 class="text-2xl sm:text-3xl font-serif font-bold text-school-navy mt-1">Administrative Overview</h1>
+                    <p class="text-sm text-slate-gray mt-1">Operational summary of students, staff, academic sessions, and school finances.</p>
                 </div>
-                <div class="absolute top-0 right-0 -mt-8 -mr-8 w-48 h-48 bg-school-gold opacity-10 rounded-full blur-2xl"></div>
-                <div class="absolute bottom-0 right-1/4 w-32 h-32 bg-school-blue opacity-20 rounded-full blur-xl"></div>
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <a href="<?= url('admin/students/create.php') ?>" class="bg-school-blue text-white px-4 py-2 rounded-md text-xs sm:text-sm font-semibold hover:bg-school-navy transition-colors shadow-sm">+ Enroll Student</a>
+                    <a href="<?= url('admin/staff/create.php') ?>" class="bg-paper text-school-navy border border-gray-300 px-4 py-2 rounded-md text-xs sm:text-sm font-semibold hover:bg-gray-50 transition-colors">+ Add Staff</a>
+                </div>
             </div>
             
             <!-- Metrics Row -->
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
                 <?php 
-                render_metric('Total Students', $studentsCount, null, 'school-blue');
-                render_metric('Total Staff', $staffCount, null, 'school-gold');
+                render_metric('Total Students', $studentsCount, 'Registered records', 'school-navy', url('admin/students/index.php'));
+                render_metric('Total Staff', $staffCount, 'Active & directory staff', 'school-blue', url('admin/staff/index.php'));
                 if ($feesAvailable) {
-                    render_metric('Outstanding Fees', '₦' . number_format((float)$outstandingFees), null, 'school-red');
+                    render_metric('Outstanding Fees', '₦' . number_format((float)$outstandingFees), 'Unpaid invoice balance', $outstandingFees > 0 ? 'school-red' : 'sage', url('admin/finance/index.php'));
                 } else {
                     render_metric('Outstanding Fees', 'Unavailable', 'Data error', 'school-red');
                 }
-                render_metric('Unread Notifications', $unreadNotifs, null, 'school-navy', url('notifications.php'));
-                
-                
+                render_metric('Unread Notifications', $unreadNotifs, 'System alerts', $unreadNotifs > 0 ? 'school-gold' : 'slate-gray', url('notifications.php'));
                 ?>
             </div>
             

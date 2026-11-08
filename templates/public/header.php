@@ -16,26 +16,16 @@ $activePublicNav = $activePublicNav ?? 'home';
     <link rel="stylesheet" href="<?= url('assets/css/print.css') ?>" media="print">
 </head>
 <body class="antialiased flex flex-col min-h-screen bg-ivory">
-    <!-- Utility Bar -->
-    <div class="bg-school-navy text-white text-xs py-2 px-6 flex justify-between items-center hidden md:flex">
-        <div class="flex space-x-6">
-            <span>+234 802 872 1204</span>
-            <span>Alakuko/Alagbado, Lagos</span>
-            <span>Morning Session: 8:00 AM – 3:00 PM</span>
-        </div>
-        <a href="<?= url('login.php') ?>" class="text-school-gold hover:text-white font-medium transition-colors">Portal Login</a>
-    </div>
-
     <!-- Main Navigation -->
-    <nav class="bg-paper shadow-sm sticky top-0 z-50">
+    <nav aria-label="Primary" class="bg-paper shadow-sm sticky top-0 z-50 border-b border-gray-200/80">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-20">
                 <div class="flex items-center">
                     <a href="<?= url('') ?>" class="flex items-center space-x-3">
-                        <img class="h-12 w-auto" src="<?= url('assets/images/branding/shoheed-logo.png') ?>" alt="Shoheed Schools">
+                        <img class="h-12 w-auto" width="48" height="48" src="<?= url('assets/images/branding/shoheed-logo.png') ?>" alt="Shoheed Schools Crest">
                         <div class="hidden sm:block">
-                            <h1 class="text-school-navy font-bold text-lg leading-tight uppercase tracking-wide">Shoheed Schools</h1>
-                            <p class="text-slate-gray text-[10px] uppercase font-bold tracking-[0.15em]">God Is Sufficient</p>
+                            <span class="block text-school-navy font-bold text-lg leading-tight uppercase tracking-wide">Shoheed Schools</span>
+                            <span class="block text-slate-gray text-[10px] uppercase font-bold tracking-[0.15em]">God Is Sufficient</span>
                         </div>
                     </a> 
                 </div>

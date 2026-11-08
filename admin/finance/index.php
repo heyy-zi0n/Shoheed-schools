@@ -13,9 +13,12 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
         <main class="flex-1 overflow-x-hidden overflow-y-auto bg-ivory p-6">
             <?php require __DIR__ . '/../../templates/components/alert.php'; ?>
 
-            <div class="mb-8">
-                <h1 class="text-2xl font-serif font-bold text-school-navy">Finance Overview</h1>
-                <p class="text-sm text-slate-gray">High-level financial metrics.</p>
+            <div class="page-header">
+                <div>
+                    <p class="page-eyebrow">Institutional Accounts</p>
+                    <h1 class="text-2xl sm:text-3xl font-serif font-bold text-school-navy mt-1">Finance Overview</h1>
+                    <p class="text-sm text-slate-gray mt-1">High-level fee revenue, collections, and outstanding student balances.</p>
+                </div>
             </div>
 
             <?php
@@ -105,22 +108,15 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div class="bg-paper p-6 rounded-lg shadow-sm border border-gray-100 border-l-4 border-l-school-blue">
-                    <p class="text-xs font-bold text-slate-gray uppercase tracking-wider mb-1">Expected Revenue</p>
-                    <p class="text-3xl font-serif font-bold text-school-navy">₦<?= number_format((float)$totalInvoices, 2) ?></p>
-                </div>
-                <div class="bg-paper p-6 rounded-lg shadow-sm border border-gray-100 border-l-4 border-l-sage">
-                    <p class="text-xs font-bold text-slate-gray uppercase tracking-wider mb-1">Total Received</p>
-                    <p class="text-3xl font-serif font-bold text-green-600">₦<?= number_format((float)$totalPayments, 2) ?></p>
-                </div>
-                <div class="bg-paper p-6 rounded-lg shadow-sm border border-gray-100 border-l-4 border-l-school-red">
-                    <p class="text-xs font-bold text-slate-gray uppercase tracking-wider mb-1">Outstanding</p>
-                    <p class="text-3xl font-serif font-bold text-red-600">₦<?= number_format((float)$outstanding, 2) ?></p>
-                </div>
+                <?php
+                render_metric('Expected Revenue', '₦' . number_format((float)$totalInvoices, 2), 'Total invoiced', 'school-blue');
+                render_metric('Total Received', '₦' . number_format((float)$totalPayments, 2), 'Verified payments', 'sage');
+                render_metric('Outstanding', '₦' . number_format((float)$outstanding, 2), 'Uncollected balance', $outstanding > 0 ? 'school-red' : 'sage');
+                ?>
             </div>
 
-            <div class="bg-paper p-6 rounded-lg shadow-sm border border-gray-100">
-                <p class="text-charcoal mb-4">Detailed finance management is handled by the Bursar. Please login with a Bursar account to generate invoices and record payments.</p>
+            <div class="bg-paper p-6 rounded-lg shadow-sm border border-gray-200/80">
+                <p class="text-charcoal text-sm leading-relaxed">Detailed finance management is handled by the Bursar. Please login with a Bursar account to generate invoices and record payments.</p>
             </div>
 
         </main>

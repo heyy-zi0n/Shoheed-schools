@@ -147,15 +147,48 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                                 <div class="space-y-4 max-w-md">
                                     <div>
                                         <label for="current_password" class="block text-sm font-bold text-charcoal mb-1">Current Password</label>
-                                        <input type="password" name="current_password" id="current_password" required class="w-full border-gray-300 rounded-md shadow-sm focus:border-school-blue focus:ring-school-blue sm:text-sm">
+                                        <div class="relative">
+                                            <input type="password" name="current_password" id="current_password" required autocomplete="current-password" class="w-full border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 focus:border-school-blue focus:ring-school-blue sm:text-sm">
+                                            <button type="button" data-password-toggle="current_password" aria-pressed="false" aria-label="Show password" class="absolute inset-y-0 right-0 px-3 flex items-center text-slate-gray hover:text-school-navy focus:outline-none focus-visible:ring-2 focus-visible:ring-school-blue rounded-r-md">
+                                                <svg data-eye-open class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                                <svg data-eye-closed class="h-4 w-4 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                                </svg>
+                                            </button>
+                                        </div>
                                     </div>
                                     <div>
                                         <label for="new_password" class="block text-sm font-bold text-charcoal mb-1">New Password</label>
-                                        <input type="password" name="new_password" id="new_password" required minlength="6" class="w-full border-gray-300 rounded-md shadow-sm focus:border-school-blue focus:ring-school-blue sm:text-sm">
+                                        <div class="relative">
+                                            <input type="password" name="new_password" id="new_password" required minlength="6" autocomplete="new-password" class="w-full border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 focus:border-school-blue focus:ring-school-blue sm:text-sm">
+                                            <button type="button" data-password-toggle="new_password" aria-pressed="false" aria-label="Show password" class="absolute inset-y-0 right-0 px-3 flex items-center text-slate-gray hover:text-school-navy focus:outline-none focus-visible:ring-2 focus-visible:ring-school-blue rounded-r-md">
+                                                <svg data-eye-open class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                                <svg data-eye-closed class="h-4 w-4 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                                </svg>
+                                            </button>
+                                        </div>
                                     </div>
                                     <div>
                                         <label for="confirm_password" class="block text-sm font-bold text-charcoal mb-1">Confirm New Password</label>
-                                        <input type="password" name="confirm_password" id="confirm_password" required minlength="6" class="w-full border-gray-300 rounded-md shadow-sm focus:border-school-blue focus:ring-school-blue sm:text-sm">
+                                        <div class="relative">
+                                            <input type="password" name="confirm_password" id="confirm_password" required minlength="6" autocomplete="new-password" class="w-full border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 focus:border-school-blue focus:ring-school-blue sm:text-sm">
+                                            <button type="button" data-password-toggle="confirm_password" aria-pressed="false" aria-label="Show password" class="absolute inset-y-0 right-0 px-3 flex items-center text-slate-gray hover:text-school-navy focus:outline-none focus-visible:ring-2 focus-visible:ring-school-blue rounded-r-md">
+                                                <svg data-eye-open class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                                <svg data-eye-closed class="h-4 w-4 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                                </svg>
+                                            </button>
+                                        </div>
                                     </div>
                                     <div class="pt-4">
                                         <button type="submit" class="bg-school-blue text-white px-4 py-2 rounded shadow hover:bg-school-navy transition-colors font-medium">Update Password</button>

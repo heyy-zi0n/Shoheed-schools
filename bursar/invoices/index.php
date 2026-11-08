@@ -81,18 +81,18 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                 <?php endforeach; ?>
             </div>
 
-            <div class="bg-paper p-6 rounded-lg shadow-sm border border-gray-100">
-                <div class="overflow-x-auto">
+            <div class="bg-paper p-6 rounded-lg shadow-sm border border-gray-200/80">
+                <div class="overflow-x-auto" role="region" aria-label="Student invoices table" tabindex="0">
                     <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                        <thead class="bg-ivory/70">
                             <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-gray uppercase tracking-wider">Student</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-gray uppercase tracking-wider">Class</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-gray uppercase tracking-wider">Total</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-gray uppercase tracking-wider">Paid</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-gray uppercase tracking-wider">Balance</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-gray uppercase tracking-wider">Status</th>
-                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-gray uppercase tracking-wider">Actions</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-slate-gray uppercase tracking-wider">Student</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-slate-gray uppercase tracking-wider">Class</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-bold text-slate-gray uppercase tracking-wider">Total</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-bold text-slate-gray uppercase tracking-wider">Paid</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-bold text-slate-gray uppercase tracking-wider">Balance</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-slate-gray uppercase tracking-wider">Status</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-bold text-slate-gray uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -101,42 +101,41 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                                 $paid = (float)$invoice['amount_paid'];
                                 $balance = max(0, $total - $paid);
                             ?>
-                            <tr class="hover:bg-gray-50">
+                            <tr class="hover:bg-ivory/40 transition-colors">
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium text-charcoal"><?= e($invoice['last_name'] . ', ' . $invoice['first_name']) ?></div>
-                                    <div class="text-xs text-slate-gray"><?= e($invoice['admission_number']) ?></div>
+                                    <div class="text-sm font-semibold text-charcoal"><?= e($invoice['last_name'] . ', ' . $invoice['first_name']) ?></div>
+                                    <div class="text-xs text-slate-gray font-mono"><?= e($invoice['admission_number']) ?></div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-charcoal">
                                     <?= e($invoice['class_name']) ?><br>
                                     <?php if ($invoice['invoice_type'] === 'SUPPLEMENTARY'): ?>
-                                        <span class="text-[10px] font-bold text-amber-600 uppercase tracking-wide">Supplementary</span>
+                                        <span class="text-[10px] font-bold text-amber uppercase tracking-wide">Supplementary</span>
                                     <?php else: ?>
                                         <span class="text-[10px] font-bold text-slate-gray uppercase tracking-wide">Standard</span>
                                     <?php endif; ?>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-charcoal">
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-charcoal tabular-nums">
                                     ₦<?= number_format($total, 2) ?>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-sage font-semibold tabular-nums">
                                     ₦<?= number_format($paid, 2) ?>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-bold">
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm <?= $balance > 0 ? 'text-school-red' : 'text-charcoal' ?> font-bold tabular-nums">
                                     ₦<?= number_format($balance, 2) ?>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <?php
-                                        $statusColor = 'bg-red-100 text-red-800';
-                                        if ($invoice['status'] === 'PARTIAL') $statusColor = 'bg-yellow-100 text-yellow-800';
-                                        if ($invoice['status'] === 'PAID') $statusColor = 'bg-sage text-white';
-                                    ?>
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <?= $statusColor ?>">
-                                        <?= e($invoice['status']) ?>
-                                    </span>
+                                    <?php if ($invoice['status'] === 'PAID'): ?>
+                                        <span class="status-badge status-badge-success"><span class="w-1.5 h-1.5 rounded-full bg-sage" aria-hidden="true"></span>Paid</span>
+                                    <?php elseif ($invoice['status'] === 'PARTIAL'): ?>
+                                        <span class="status-badge status-badge-warning"><span class="w-1.5 h-1.5 rounded-full bg-amber" aria-hidden="true"></span>Partial</span>
+                                    <?php else: ?>
+                                        <span class="status-badge status-badge-danger"><span class="w-1.5 h-1.5 rounded-full bg-dusty-red" aria-hidden="true"></span><?= e(ucfirst(strtolower($invoice['status']))) ?></span>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex items-center justify-end gap-3">
                                         <?php if ($invoice['status'] !== 'PAID'): ?>
-                                        <a href="<?= url('bursar/payments/create.php?invoice=' . $invoice['id']) ?>" class="text-school-blue hover:text-school-navy">Record Payment</a>
+                                        <a href="<?= url('bursar/payments/create.php?invoice=' . $invoice['id']) ?>" class="text-school-blue hover:text-school-navy font-semibold">Record Payment</a>
                                         <?php endif; ?>
 
                                         <?php
@@ -146,16 +145,14 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                                             <?php if ($invoice['blocking_submissions_count'] > 0): ?>
                                                 <span class="text-xs text-slate-gray cursor-help" title="Pending or verified transfer exists">Blocked (Transfer)</span>
                                             <?php else: ?>
-                                                <form action="<?= url('actions/invoices/refresh.php') ?>" method="POST" class="inline" onsubmit="return confirm('Refresh this invoice from the latest Fee Structure?\n\nCurrent invoice: ₦<?= number_format($total, 2) ?>\nCurrent Fee Structure: ₦<?= number_format($invoice['fee_structure_total'], 2) ?>\n\nThis will replace the invoice items only if no payment activity exists.');">
+                                                <form action="<?= url('actions/invoices/refresh.php') ?>" method="POST" class="inline" data-confirm="Refresh this invoice from the latest Fee Structure? Current invoice: ₦<?= number_format($total, 2) ?> | Fee Structure: ₦<?= number_format($invoice['fee_structure_total'], 2) ?>">
                                                     <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
                                                     <input type="hidden" name="invoice_id" value="<?= $invoice['id'] ?>">
-                                                    <button type="submit" class="text-xs <?= $outOfSync ? 'text-amber-600 font-bold hover:text-amber-800' : 'text-slate-gray hover:text-charcoal' ?>">
+                                                    <button type="submit" class="text-xs <?= $outOfSync ? 'text-amber font-bold hover:text-school-navy' : 'text-slate-gray hover:text-charcoal' ?>">
                                                         Refresh <?= $outOfSync ? '(Out of Sync)' : '' ?>
                                                     </button>
                                                 </form>
                                             <?php endif; ?>
-                                        <?php elseif ($invoice['status'] === 'PARTIAL' || $invoice['status'] === 'PAID'): ?>
-                                            <!-- Paid invoices are immutable, do not show refresh -->
                                         <?php endif; ?>
                                     </div>
                                 </td>
@@ -163,7 +160,7 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                             <?php endforeach; ?>
                             <?php if (empty($invoices)): ?>
                             <tr>
-                                <td colspan="7" class="px-6 py-4 whitespace-nowrap text-sm text-slate-gray text-center">No invoices generated for the current term.</td>
+                                <td colspan="7" class="px-6 py-8 whitespace-nowrap text-sm text-slate-gray text-center">No invoices generated for the current term.</td>
                             </tr>
                             <?php endif; ?>
                         </tbody>

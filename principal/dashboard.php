@@ -76,24 +76,26 @@ require __DIR__ . '/../templates/layouts/app-header.php';
         <main class="flex-1 overflow-x-hidden overflow-y-auto bg-ivory p-6">
             <?php require __DIR__ . '/../templates/components/alert.php'; ?>
             
-            <!-- Hero Section -->
-            <div class="mb-8 bg-school-navy rounded-xl p-8 text-white shadow-md relative overflow-hidden">
-                <div class="relative z-10">
-                    <h1 class="text-3xl font-serif font-bold mb-2">Academic Oversight</h1>
-                    <p class="text-blue-200">Monitor approvals, assignments, and school performance.</p>
+            <!-- Institutional Workspace Header -->
+            <div class="page-header">
+                <div>
+                    <p class="page-eyebrow">Academic Head</p>
+                    <h1 class="text-2xl sm:text-3xl font-serif font-bold text-school-navy mt-1">Academic Oversight</h1>
+                    <p class="text-sm text-slate-gray mt-1">Monitor result approvals, teaching allocations, and term academic progress.</p>
                 </div>
-                <div class="absolute top-0 right-0 -mt-8 -mr-8 w-48 h-48 bg-white opacity-5 rounded-full blur-2xl"></div>
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <a href="<?= url('principal/results/index.php') ?>" class="bg-school-blue text-white px-4 py-2 rounded-md text-xs sm:text-sm font-semibold hover:bg-school-navy transition-colors shadow-sm">Result Approvals</a>
+                    <a href="<?= url('admin/reports/broadsheet.php') ?>" class="bg-paper text-school-navy border border-gray-300 px-4 py-2 rounded-md text-xs sm:text-sm font-semibold hover:bg-gray-50 transition-colors">View Broadsheet</a>
+                </div>
             </div>
             
             <!-- Metrics Row -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
                 <?php 
-                render_metric('Pending Result Approvals', $pendingApprovals, null, $pendingApprovals > 0 ? 'school-red' : 'sage');
-                render_metric('Classes with Teachers', $assignedCTs . ' / ' . $totalClasses, null, 'school-blue', url('principal/assignments/classes.php'));
+                render_metric('Pending Result Approvals', $pendingApprovals, 'Awaiting Principal action', $pendingApprovals > 0 ? 'school-red' : 'sage', url('principal/results/index.php'));
+                render_metric('Classes with Teachers', $assignedCTs . ' / ' . $totalClasses, 'Class teacher coverage', 'school-blue', url('principal/assignments/classes.php'));
                 render_metric('Subject Assignments', $totalSubjectAssignments, 'Active allocations', 'school-gold', url('principal/assignments/subjects.php'));
-                render_metric('Enrolled Students', $totalStudents, 'Current Session', 'school-navy', url('principal/students/index.php'));
-                
-                
+                render_metric('Enrolled Students', $totalStudents, 'Current session', 'school-navy', url('principal/students/index.php'));
                 ?>
             </div>
             

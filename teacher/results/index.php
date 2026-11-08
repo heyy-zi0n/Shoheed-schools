@@ -63,8 +63,8 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
             </div>
             
             <?php if (!$activeSession || !$activeTerm): ?>
-                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-                    <p class="text-sm text-yellow-700">The academic session or term is not set. Please contact the administrator.</p>
+                <div class="bg-amber-50 border border-amber-200 text-amber-900 p-4 rounded-lg">
+                    <p class="text-sm">The academic session or term is not set. Please contact the administrator.</p>
                 </div>
             <?php elseif (empty($assignments)): ?>
                 <div class="bg-paper p-8 rounded-lg shadow-sm border border-gray-100 text-center">

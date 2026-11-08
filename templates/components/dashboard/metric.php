@@ -6,32 +6,43 @@
  * @var string|null $color (e.g. 'school-blue', 'school-gold', 'school-red', 'sage', 'school-navy')
  * @var string|null $link
  */
-$color = $color ?? 'school-blue';
+$color = $color ?? 'school-navy';
 $subtitle = $subtitle ?? null;
 $link = $link ?? null;
-$borderColorMap = [
-    'school-blue' => 'border-l-school-blue',
-    'school-navy' => 'border-l-school-navy',
-    'school-red'  => 'border-l-school-red',
-    'school-gold' => 'border-l-school-gold',
-    'sage'        => 'border-l-sage',
-    'amber'       => 'border-l-amber',
-    'dusty-red'   => 'border-l-dusty-red',
-    'slate-gray'  => 'border-l-slate-gray',
+
+$indicatorDotMap = [
+    'school-red'  => 'bg-school-red',
+    'dusty-red'   => 'bg-dusty-red',
+    'school-gold' => 'bg-school-gold',
+    'amber'       => 'bg-amber',
+    'sage'        => 'bg-sage',
+    'school-blue' => 'bg-school-blue',
+    'school-navy' => 'bg-school-navy',
+    'slate-gray'  => 'bg-slate-gray',
 ];
-$borderClass = $borderColorMap[$color] ?? 'border-l-school-blue';
+$dotClass = $indicatorDotMap[$color] ?? 'bg-school-navy';
+$isAlertTone = in_array($color, ['school-red', 'dusty-red'], true);
+$valueColorClass = $isAlertTone ? 'text-school-red' : 'text-school-navy';
 ?>
-<div class="bg-paper p-6 rounded-lg shadow-sm border border-gray-100 border-l-4 <?= $borderClass ?> h-full flex flex-col justify-between">
+<div class="bg-paper p-5 rounded-lg shadow-sm border border-gray-200/80 h-full flex flex-col justify-between">
     <div>
-        <p class="text-xs font-bold text-slate-gray uppercase tracking-wider mb-1"><?= e($title) ?></p>
-        <p class="text-3xl font-serif font-bold text-school-navy mt-1 truncate"><?= is_numeric($value) && floor($value) == $value ? number_format((float)$value) : e($value) ?></p>
+        <div class="flex items-center justify-between gap-2 mb-2">
+            <p class="text-[11px] font-bold text-slate-gray uppercase tracking-[0.12em]"><?= e($title) ?></p>
+            <span class="w-2 h-2 rounded-full flex-shrink-0 <?= $dotClass ?>" aria-hidden="true"></span>
+        </div>
+        <p class="text-2xl sm:text-3xl font-serif font-bold <?= $valueColorClass ?> tabular-nums tracking-tight truncate">
+            <?= is_numeric($value) && floor((float)$value) == (float)$value ? number_format((float)$value) : e($value) ?>
+        </p>
         <?php if (!empty($subtitle)): ?>
-            <p class="text-xs text-slate-gray mt-2"><?= e($subtitle) ?></p>
+            <p class="text-xs text-slate-gray mt-1.5"><?= e($subtitle) ?></p>
         <?php endif; ?>
     </div>
     <?php if (!empty($link)): ?>
-        <div class="mt-4 pt-4 border-t border-gray-50">
-            <a href="<?= e($link) ?>" class="text-sm text-school-blue hover:text-school-navy font-medium">View details &rarr;</a>
+        <div class="mt-4 pt-3 border-t border-gray-100">
+            <a href="<?= e($link) ?>" class="text-xs text-school-blue hover:text-school-navy font-semibold inline-flex items-center gap-1 transition-colors">
+                <span>Open view</span>
+                <span aria-hidden="true">&rarr;</span>
+            </a>
         </div>
     <?php endif; ?>
 </div>

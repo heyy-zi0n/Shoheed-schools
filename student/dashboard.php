@@ -106,42 +106,45 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                 </div>
             <?php else: ?>
             
-                <!-- Hero Section -->
-                <div class="mb-8 bg-school-navy rounded-xl p-8 text-white shadow-md relative overflow-hidden">
-                    <div class="relative z-10">
-                        <h1 class="text-3xl font-serif font-bold mb-2">Welcome back, <?= e($student['first_name']) ?>!</h1>
-                        <p class="text-blue-200">
-                            <?= $currentClass ? 'You are currently in ' . e($currentClass['name']) . ' for the ' . e($activeSession['name'] ?? '') . ' session.' : 'Your academic overview.' ?>
+                <!-- Institutional Workspace Header -->
+                <div class="page-header">
+                    <div>
+                        <p class="page-eyebrow">Student Portal &bull; <?= e($student['admission_number']) ?></p>
+                        <h1 class="text-2xl sm:text-3xl font-serif font-bold text-school-navy mt-1">Welcome back, <?= e($student['first_name']) ?>.</h1>
+                        <p class="text-sm text-slate-gray mt-1">
+                            <?= $currentClass ? 'Enrolled in ' . e($currentClass['name']) . ' for the ' . e($activeSession['name'] ?? '') . ' academic session.' : 'Your academic and financial summary.' ?>
                         </p>
                     </div>
-                    <div class="absolute top-0 right-0 -mt-8 -mr-8 w-48 h-48 bg-school-gold opacity-10 rounded-full blur-2xl"></div>
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <a href="<?= url('student/results.php') ?>" class="bg-school-blue text-white px-4 py-2 rounded-md text-xs sm:text-sm font-semibold hover:bg-school-navy transition-colors shadow-sm">View Results</a>
+                        <a href="<?= url('student/fees.php') ?>" class="bg-paper text-school-navy border border-gray-300 px-4 py-2 rounded-md text-xs sm:text-sm font-semibold hover:bg-gray-50 transition-colors">Fees &amp; Payments</a>
+                    </div>
                 </div>
                 
                 <!-- Metrics Row -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
                     <?php 
-                    
-                        render_metric('Current Class', $currentClass['name'] ?? 'Not Enrolled', null, 'school-blue');
-                    render_metric('Published Results', $publishedResults, null, 'school-gold', url('student/results.php'));
+                    render_metric('Current Class', $currentClass['name'] ?? 'Not Enrolled', 'Session ' . ($activeSession['name'] ?? 'N/A'), 'school-blue');
+                    render_metric('Published Results', $publishedResults, 'Available report cards', 'school-gold', url('student/results.php'));
                     
                     if (isset($attendanceAvailable) && $attendanceAvailable) {
                         if ($attendancePercentage !== null) {
-                            render_metric('Attendance', $attendancePercentage . '%', 'This session', $attendancePercentage > 75 ? 'sage' : 'school-red', url('student/attendance.php'));
+                            render_metric('Attendance Rate', $attendancePercentage . '%', 'Current session', $attendancePercentage >= 75 ? 'sage' : 'school-red', url('student/attendance.php'));
                         } else {
-                            render_metric('Attendance', 'No records', 'This session', 'slate-gray', url('student/attendance.php'));
+                            render_metric('Attendance Rate', 'No records', 'Current session', 'slate-gray', url('student/attendance.php'));
                         }
                     } else {
-                        render_metric('Attendance', 'Error', 'Data unavailable', 'school-red');
+                        render_metric('Attendance Rate', 'Error', 'Data unavailable', 'school-red');
                     }
                     
                     if (isset($financeAvailable) && $financeAvailable) {
-                        render_metric('Outstanding Fees', '₦' . number_format((float)$feeBalance), null, $feeBalance > 0 ? 'school-red' : 'sage', url('student/fees.php'));
-                        render_metric('Pending Verification', '₦' . number_format((float)$totalPending), null, $totalPending > 0 ? 'school-gold' : 'slate-gray', url('student/fees.php'));
+                        render_metric('Outstanding Fees', '₦' . number_format((float)$feeBalance), 'Unpaid balance', $feeBalance > 0 ? 'school-red' : 'sage', url('student/fees.php'));
+                        render_metric('Pending Verification', '₦' . number_format((float)$totalPending), 'Submitted transfers', $totalPending > 0 ? 'school-gold' : 'slate-gray', url('student/fees.php'));
                     } else {
                         render_metric('Outstanding Fees', 'Error', 'Data unavailable', 'school-red');
                     }
                     
-                    render_metric('Unread Notifications', $unreadNotifs, null, 'school-navy', url('notifications.php'));
+                    render_metric('Unread Notifications', $unreadNotifs, 'Portal updates', $unreadNotifs > 0 ? 'school-navy' : 'slate-gray', url('notifications.php'));
                     ?>
                 </div>
                 

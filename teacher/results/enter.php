@@ -72,6 +72,7 @@ $readonly = ($subjectStatus === 'SUBMITTED' || in_array($classStatus, ['CLASS_TE
 
 // Get existing scores
 $scoresByStudent = [];
+$completedCount = 0;
 if ($batchId) {
     $stmt = $pdo->prepare("SELECT * FROM scores WHERE result_batch_id = :bid AND subject_id = :sid");
     $stmt->execute(['bid' => $batchId, 'sid' => $subjectId]);
@@ -79,6 +80,13 @@ if ($batchId) {
         $scoresByStudent[$score['student_id']] = $score;
     }
 }
+foreach ($students as $stRow) {
+    $sc = $scoresByStudent[$stRow['id']] ?? null;
+    if ($sc && ($sc['ca_score'] !== null || $sc['exam_score'] !== null)) {
+        $completedCount++;
+    }
+}
+$totalStudentCount = count($students);
 
 require __DIR__ . '/../../templates/layouts/app-header.php';
 ?>
@@ -89,25 +97,45 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
         <main class="flex-1 overflow-x-hidden overflow-y-auto bg-ivory p-6">
             <?php require __DIR__ . '/../../templates/components/alert.php'; ?>
             
-            <div class="mb-8 flex justify-between items-center">
+            <div class="page-header">
                 <div>
-                    <a href="<?= url('teacher/results/index.php') ?>" class="text-sm text-slate-gray hover:text-school-navy mb-2 inline-block">&larr; Back to Subjects</a>
-                    <h1 class="text-2xl font-serif font-bold text-school-navy">Score Entry</h1>
-                    <p class="text-sm text-slate-gray">
-                        <?= e($className) ?> &bull; <?= e($subjectName) ?> &bull; <?= e($activeTerm['name']) ?>
+                    <a href="<?= url('teacher/results/index.php') ?>" class="text-xs font-semibold text-school-blue hover:text-school-navy mb-2 inline-flex items-center gap-1">
+                        <span aria-hidden="true">&larr;</span>
+                        <span>Back to Assigned Subjects</span>
+                    </a>
+                    <p class="page-eyebrow mt-1">Result Entry</p>
+                    <h1 class="text-2xl sm:text-3xl font-serif font-bold text-school-navy mt-0.5"><?= e($subjectName) ?> &mdash; <?= e($className) ?></h1>
+                    <p class="text-sm text-slate-gray mt-1">
+                        <?= e($activeTerm['name']) ?> &bull; <?= e($activeSession['name']) ?> Session
                     </p>
                 </div>
-                <div>
-                    <span class="px-3 py-1 text-xs font-bold rounded-full bg-gray-200 text-gray-800">
+                <div class="flex flex-col sm:items-end gap-2">
+                    <?php
+                    $statusBadgeClass = match ($subjectStatus) {
+                        'SUBMITTED' => 'status-badge-info',
+                        'REVISION_REQUIRED' => 'status-badge-warning',
+                        default => 'status-badge-neutral',
+                    };
+                    ?>
+                    <span class="status-badge <?= $statusBadgeClass ?>">
+                        <span class="w-1.5 h-1.5 rounded-full bg-current" aria-hidden="true"></span>
                         Status: <?= e($subjectStatus) ?>
                     </span>
+                    <?php if ($totalStudentCount > 0): ?>
+                        <div class="flex items-center gap-3 text-xs text-slate-gray">
+                            <label for="score-completion-progress" class="font-semibold text-charcoal">
+                                Progress: <span id="score-progress-text" class="tabular-nums font-bold text-school-navy"><?= $completedCount ?></span> of <span class="tabular-nums"><?= $totalStudentCount ?></span> completed
+                            </label>
+                            <progress id="score-completion-progress" max="<?= $totalStudentCount ?>" value="<?= $completedCount ?>" class="w-24 h-2 rounded overflow-hidden accent-school-blue"></progress>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
             
-            <div class="bg-paper p-6 rounded-lg shadow-sm border border-gray-100">
+            <div class="bg-paper p-6 rounded-lg shadow-sm border border-gray-200/80">
                 <?php if ($subjectStatus === 'REVISION_REQUIRED'): ?>
                     <div class="mb-6 p-4 bg-yellow-50 text-yellow-800 rounded-md border border-yellow-200">
-                        <h4 class="font-bold mb-1">Revision Required</h4>
+                        <h2 class="font-bold text-sm mb-1">Revision Required</h2>
                         <p class="text-sm"><?= e($revisionComments ?? 'Please review and resubmit the scores.') ?></p>
                     </div>
                 <?php elseif ($readonly): ?>
@@ -121,19 +149,20 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                     </div>
                 <?php endif; ?>
                 
-                <form action="<?= url('actions/results/save_scores.php') ?>" method="POST">
+                <form action="<?= url('actions/results/save_scores.php') ?>" method="POST" id="score-entry-form">
                     <?= csrf_field() ?>
                     <input type="hidden" name="class_id" value="<?= $classId ?>">
                     <input type="hidden" name="subject_id" value="<?= $subjectId ?>">
+                    <input type="hidden" name="action_type" value="save_draft">
                     
-                    <div class="overflow-x-auto" role="region" aria-label="Student score entry table" tabindex="0">
+                    <div class="overflow-x-auto max-h-[640px]" role="region" aria-label="Student score entry table" tabindex="0">
                         <table class="min-w-full divide-y divide-gray-200 border border-gray-200">
-                            <thead class="bg-gray-50">
+                            <thead class="bg-ivory sticky top-0 z-10 shadow-sm">
                                 <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-gray uppercase tracking-wider w-1/2">Student</th>
-                                    <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-slate-gray uppercase tracking-wider">CA (Max 40)</th>
-                                    <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-slate-gray uppercase tracking-wider">Exam (Max 60)</th>
-                                    <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-slate-gray uppercase tracking-wider">Total</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-slate-gray uppercase tracking-wider w-1/2">Student</th>
+                                    <th scope="col" class="px-4 py-3 text-center text-xs font-bold text-slate-gray uppercase tracking-wider">CA / 40</th>
+                                    <th scope="col" class="px-4 py-3 text-center text-xs font-bold text-slate-gray uppercase tracking-wider">Exam / 60</th>
+                                    <th scope="col" class="px-4 py-3 text-center text-xs font-bold text-slate-gray uppercase tracking-wider">Total / 100</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -145,18 +174,18 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                                     $tot = $score ? $score['total_score'] : '';
                                     $studentLabel = trim($student['last_name'] . ' ' . $student['first_name']);
                                 ?>
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-medium text-charcoal"><?= e($student['last_name'] . ', ' . $student['first_name'] . ' ' . $student['middle_name']) ?></div>
-                                        <div class="text-xs text-slate-gray"><?= e($student['admission_number']) ?></div>
+                                <tr class="hover:bg-ivory/40 transition-colors" data-student-row="<?= $sid ?>">
+                                    <td class="px-6 py-3.5 whitespace-nowrap">
+                                        <div class="text-sm font-semibold text-charcoal"><?= e($student['last_name'] . ', ' . $student['first_name'] . ' ' . $student['middle_name']) ?></div>
+                                        <div class="text-xs text-slate-gray font-mono"><?= e($student['admission_number']) ?></div>
                                     </td>
-                                    <td class="px-4 py-4 whitespace-nowrap text-center">
-                                        <input type="number" step="0.01" min="0" max="40" name="scores[<?= $sid ?>][ca]" aria-label="CA Score for <?= e($studentLabel) ?>" value="<?= e($ca) ?>" <?= $readonly ? 'disabled' : '' ?> class="score-input w-20 text-center border-gray-300 rounded-md shadow-sm focus:ring-school-blue focus:border-school-blue sm:text-sm" oninput="calculateTotal(<?= $sid ?>)">
+                                    <td class="px-4 py-3.5 whitespace-nowrap text-center">
+                                        <input type="number" step="0.01" min="0" max="40" name="scores[<?= $sid ?>][ca]" aria-label="CA Score for <?= e($studentLabel) ?>" value="<?= e($ca) ?>" <?= $readonly ? 'disabled' : '' ?> class="score-input w-20 px-2 py-1.5 text-center tabular-nums border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-school-blue focus:border-school-blue sm:text-sm" data-student-id="<?= $sid ?>" data-score-part="ca">
                                     </td>
-                                    <td class="px-4 py-4 whitespace-nowrap text-center">
-                                        <input type="number" step="0.01" min="0" max="60" name="scores[<?= $sid ?>][exam]" aria-label="Exam Score for <?= e($studentLabel) ?>" value="<?= e($ex) ?>" <?= $readonly ? 'disabled' : '' ?> class="score-input w-20 text-center border-gray-300 rounded-md shadow-sm focus:ring-school-blue focus:border-school-blue sm:text-sm" oninput="calculateTotal(<?= $sid ?>)">
+                                    <td class="px-4 py-3.5 whitespace-nowrap text-center">
+                                        <input type="number" step="0.01" min="0" max="60" name="scores[<?= $sid ?>][exam]" aria-label="Exam Score for <?= e($studentLabel) ?>" value="<?= e($ex) ?>" <?= $readonly ? 'disabled' : '' ?> class="score-input w-20 px-2 py-1.5 text-center tabular-nums border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-school-blue focus:border-school-blue sm:text-sm" data-student-id="<?= $sid ?>" data-score-part="exam">
                                     </td>
-                                    <td class="px-4 py-4 whitespace-nowrap text-center font-bold text-school-navy" id="total_<?= $sid ?>">
+                                    <td class="px-4 py-3.5 whitespace-nowrap text-center font-bold text-school-navy tabular-nums" id="total_<?= $sid ?>">
                                         <?= e($tot) ?>
                                     </td>
                                 </tr>
@@ -171,17 +200,18 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                     </div>
                     
                     <?php if (!$readonly && !empty($students)): ?>
-                    <div class="mt-6 flex justify-between items-center bg-gray-50 p-4 border border-gray-200 rounded-md">
-                        <div class="flex items-center space-x-2">
-                            <label for="action_type" class="sr-only">Submission Action</label>
-                            <select id="action_type" name="action_type" aria-label="Submission Action" class="border-gray-300 rounded-md shadow-sm focus:ring-school-blue focus:border-school-blue sm:text-sm">
-                                <option value="save_draft">Save Draft</option>
-                                <option value="submit">Submit to Class Teacher</option>
-                            </select>
+                    <div class="mt-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-ivory/60 p-4 border border-gray-200 rounded-md">
+                        <p class="text-xs text-slate-gray">
+                            Save your work as a draft at any time, or submit completed scores to the Class Teacher for verification.
+                        </p>
+                        <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                            <button type="submit" data-action-type="save_draft" class="bg-paper text-school-navy border border-gray-300 px-5 py-2.5 rounded-md font-semibold text-sm hover:bg-gray-50 transition-colors shadow-sm">
+                                Save Draft
+                            </button>
+                            <button type="submit" data-action-type="submit" data-confirm="Submit these scores to the Class Teacher for verification? Once submitted, scores are locked from editing unless returned for revision." class="bg-school-blue text-white px-6 py-2.5 rounded-md font-semibold text-sm hover:bg-school-navy transition-colors shadow-sm">
+                                Submit Scores
+                            </button>
                         </div>
-                        <button type="submit" class="bg-school-blue text-white px-6 py-2 rounded font-medium text-sm hover:bg-school-navy transition-colors shadow-sm">
-                            Save Scores
-                        </button>
                     </div>
                     <?php endif; ?>
                 </form>
@@ -196,6 +226,7 @@ function calculateTotal(studentId) {
     const caInput = document.querySelector(`input[name="scores[${studentId}][ca]"]`);
     const examInput = document.querySelector(`input[name="scores[${studentId}][exam]"]`);
     const totalDisplay = document.getElementById(`total_${studentId}`);
+    if (!caInput || !examInput || !totalDisplay) return;
     
     let ca = parseFloat(caInput.value) || 0;
     let exam = parseFloat(examInput.value) || 0;
@@ -210,7 +241,31 @@ function calculateTotal(studentId) {
     } else {
         totalDisplay.innerText = total.toFixed(2);
     }
+    updateCompletionProgress();
 }
+
+function updateCompletionProgress() {
+    const rows = document.querySelectorAll('tr[data-student-row]');
+    let completed = 0;
+    rows.forEach(row => {
+        const sid = row.getAttribute('data-student-row');
+        const ca = document.querySelector(`input[name="scores[${sid}][ca]"]`);
+        const exam = document.querySelector(`input[name="scores[${sid}][exam]"]`);
+        if ((ca && ca.value !== '') || (exam && exam.value !== '')) {
+            completed++;
+        }
+    });
+    const textEl = document.getElementById('score-progress-text');
+    const progEl = document.getElementById('score-completion-progress');
+    if (textEl) textEl.textContent = String(completed);
+    if (progEl) progEl.value = completed;
+}
+
+document.querySelectorAll('.score-input[data-student-id]').forEach(input => {
+    input.addEventListener('input', () => {
+        calculateTotal(input.getAttribute('data-student-id'));
+    });
+});
 </script>
 
 <?php require __DIR__ . '/../../templates/layouts/app-footer.php'; ?>

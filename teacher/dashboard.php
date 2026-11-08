@@ -77,17 +77,24 @@ $unreadNotifStmt = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE user_
 $unreadNotifStmt->execute([$userId]);
 $unreadNotifs = (int)$unreadNotifStmt->fetchColumn();
 
-// Helper to determine status pill color
+// Helper to determine status pill with semantic badge + non-color status dot
 function get_status_pill($status) {
     $status = $status ?? 'DRAFT';
     switch ($status) {
-        case 'DRAFT': return '<span class="px-2 py-1 bg-gray-100 text-slate-gray text-xs font-bold rounded">DRAFT</span>';
-        case 'SUBMITTED': return '<span class="px-2 py-1 bg-blue-100 text-school-blue text-xs font-bold rounded">SUBMITTED</span>';
-        case 'REVISION_REQUIRED': return '<span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-bold rounded">REVISION REQUIRED</span>';
-        case 'CLASS_TEACHER_VERIFIED': return '<span class="px-2 py-1 bg-green-100 text-sage text-xs font-bold rounded">CT VERIFIED</span>';
-        case 'PRINCIPAL_APPROVED': return '<span class="px-2 py-1 bg-green-100 text-sage text-xs font-bold rounded">APPROVED</span>';
-        case 'PUBLISHED': return '<span class="px-2 py-1 bg-green-100 text-sage text-xs font-bold rounded">PUBLISHED</span>';
-        default: return '<span class="px-2 py-1 bg-gray-100 text-slate-gray text-xs font-bold rounded">' . e($status) . '</span>';
+        case 'DRAFT':
+            return '<span class="status-badge status-badge-neutral"><span class="w-1.5 h-1.5 rounded-full bg-slate-gray" aria-hidden="true"></span>Draft</span>';
+        case 'SUBMITTED':
+            return '<span class="status-badge status-badge-info"><span class="w-1.5 h-1.5 rounded-full bg-school-blue" aria-hidden="true"></span>Submitted</span>';
+        case 'REVISION_REQUIRED':
+            return '<span class="status-badge status-badge-warning"><span class="w-1.5 h-1.5 rounded-full bg-amber" aria-hidden="true"></span>Revision Required</span>';
+        case 'CLASS_TEACHER_VERIFIED':
+            return '<span class="status-badge status-badge-success"><span class="w-1.5 h-1.5 rounded-full bg-sage" aria-hidden="true"></span>CT Verified</span>';
+        case 'PRINCIPAL_APPROVED':
+            return '<span class="status-badge status-badge-success"><span class="w-1.5 h-1.5 rounded-full bg-sage" aria-hidden="true"></span>Approved</span>';
+        case 'PUBLISHED':
+            return '<span class="status-badge status-badge-success"><span class="w-1.5 h-1.5 rounded-full bg-sage" aria-hidden="true"></span>Published</span>';
+        default:
+            return '<span class="status-badge status-badge-neutral">' . e($status) . '</span>';
     }
 }
 
@@ -101,26 +108,30 @@ require __DIR__ . '/../templates/layouts/app-header.php';
         <main class="flex-1 overflow-x-hidden overflow-y-auto bg-ivory p-6">
             <?php require __DIR__ . '/../templates/components/alert.php'; ?>
             
-            <!-- Hero Section -->
-            <div class="mb-8 bg-school-navy rounded-xl p-8 text-white shadow-md relative overflow-hidden">
-                <div class="relative z-10">
-                    <h1 class="text-3xl font-serif font-bold mb-2">Welcome back, <?= e(explode(' ', get_user_display_name($userId, current_user_role()))[0]) ?>.</h1>
-                    <p class="text-blue-200">Here are your teaching assignments and academic tasks for the current session.</p>
+            <!-- Institutional Workspace Header -->
+            <div class="page-header">
+                <div>
+                    <p class="page-eyebrow">Teaching Workspace</p>
+                    <h1 class="text-2xl sm:text-3xl font-serif font-bold text-school-navy mt-1">Welcome back, <?= e(explode(' ', get_user_display_name($userId, current_user_role()))[0]) ?>.</h1>
+                    <p class="text-sm text-slate-gray mt-1">Teaching assignments, score submissions, and class responsibilities for the active term.</p>
                 </div>
-                <!-- Decorative background elements -->
-                <div class="absolute top-0 right-0 -mt-8 -mr-8 w-48 h-48 bg-white opacity-5 rounded-full blur-2xl"></div>
-                <div class="absolute bottom-0 right-32 -mb-8 w-32 h-32 bg-school-gold opacity-10 rounded-full blur-xl"></div>
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <?php if ($totalSubjects > 0): ?>
+                        <a href="<?= url('teacher/results/index.php') ?>" class="bg-school-blue text-white px-4 py-2 rounded-md text-xs sm:text-sm font-semibold hover:bg-school-navy transition-colors shadow-sm">Score Entry</a>
+                    <?php endif; ?>
+                    <?php if ($totalClasses > 0): ?>
+                        <a href="<?= url('teacher/attendance/index.php') ?>" class="bg-paper text-school-navy border border-gray-300 px-4 py-2 rounded-md text-xs sm:text-sm font-semibold hover:bg-gray-50 transition-colors">Mark Attendance</a>
+                    <?php endif; ?>
+                </div>
             </div>
             
             <!-- Metrics Row -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
                 <?php 
-                render_metric('Assigned Subjects', $totalSubjects, null, 'school-blue');
-                if ($totalClasses > 0) render_metric('Classes Taught', $totalClasses, null, 'school-gold');
-                render_metric('Revision Requests', $revisionCount, null, $revisionCount > 0 ? 'school-red' : 'sage');
-                render_metric('Unread Notifications', $unreadNotifs, null, 'school-navy', url('notifications.php'));
-                
-                
+                render_metric('Assigned Subjects', $totalSubjects, 'Active session', 'school-blue', url('teacher/results/index.php'));
+                render_metric('Classes Assigned', $totalClasses, 'Class teacher role', 'school-gold');
+                render_metric('Revision Requests', $revisionCount, 'Returned for correction', $revisionCount > 0 ? 'school-red' : 'sage');
+                render_metric('Unread Notifications', $unreadNotifs, 'System alerts', $unreadNotifs > 0 ? 'school-navy' : 'slate-gray', url('notifications.php'));
                 ?>
             </div>
             
