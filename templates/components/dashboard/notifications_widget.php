@@ -8,7 +8,7 @@ $stmt->execute([$userId]);
 $recentNotifications = $stmt->fetchAll();
 ?>
 <div class="bg-paper rounded-lg shadow-sm border border-gray-100 overflow-hidden flex flex-col h-full">
-    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+    <div class="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
         <h3 class="text-sm font-bold text-school-navy uppercase tracking-wider">Recent Notifications</h3>
         <a href="<?= url('notifications.php') ?>" class="text-xs text-school-blue hover:underline font-medium">View All</a>
     </div>
@@ -24,23 +24,23 @@ $recentNotifications = $stmt->fetchAll();
         <?php else: ?>
             <ul class="divide-y divide-gray-100">
                 <?php foreach ($recentNotifications as $n): ?>
-                    <li class="px-6 py-4 <?= $n['is_read'] ? 'bg-white' : 'bg-blue-50/30' ?>">
+                    <li class="px-4 sm:px-6 py-3.5 sm:py-4 <?= $n['is_read'] ? 'bg-white' : 'bg-blue-50/30' ?>">
                         <div class="flex items-start">
-                            <div class="flex-shrink-0 mt-1">
+                            <div class="flex-shrink-0 mt-1.5">
                                 <?php if (!$n['is_read']): ?>
                                     <div class="w-2 h-2 bg-school-blue rounded-full"></div>
                                 <?php else: ?>
                                     <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
                                 <?php endif; ?>
                             </div>
-                            <div class="ml-3 flex-1">
+                            <div class="ml-3 flex-1 min-w-0">
                                 <p class="text-sm font-bold <?= $n['is_read'] ? 'text-charcoal' : 'text-school-navy' ?>">
                                     <?= e($n['title']) ?>
                                 </p>
-                                <p class="text-xs text-slate-gray mt-1 truncate" title="<?= e($n['message']) ?>">
+                                <p class="text-xs text-slate-gray mt-1 leading-relaxed break-words">
                                     <?= e($n['message']) ?>
                                 </p>
-                                <p class="text-[10px] text-gray-400 mt-1 uppercase tracking-wide">
+                                <p class="text-[10px] text-gray-400 mt-1.5 uppercase tracking-wide">
                                     <?= e(date('M j, Y', strtotime($n['created_at']))) ?>
                                 </p>
                             </div>

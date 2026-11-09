@@ -69,32 +69,32 @@ require __DIR__ . '/../templates/layouts/app-header.php';
     <?php require __DIR__ . '/../templates/layouts/sidebar.php'; ?>
     <div class="flex-1 flex flex-col overflow-hidden print-layout-content">
         <?php require __DIR__ . '/../templates/layouts/topbar.php'; ?>
-        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-ivory p-6">
+        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-ivory p-2 sm:p-6 lg:p-8">
             <div class="no-print">
                 <?php require __DIR__ . '/../templates/components/alert.php'; ?>
             </div>
             
-            <div class="mb-8 flex flex-wrap justify-between items-center gap-4 no-print">
+            <div class="mb-6 sm:mb-8 flex flex-wrap justify-between items-center gap-3 no-print">
                 <div>
-                    <h1 class="text-2xl font-serif font-bold text-school-navy">My Results</h1>
-                    <p class="text-sm text-slate-gray">View and print your published Continuous Assessment Report.</p>
+                    <h1 class="text-xl sm:text-2xl font-serif font-bold text-school-navy">My Results</h1>
+                    <p class="text-xs sm:text-sm text-slate-gray">View and print your published Continuous Assessment Report.</p>
                 </div>
                 <?php if ($report): ?>
-                <button type="button" onclick="window.print()" class="bg-school-blue text-white hover:bg-school-navy px-5 py-2 rounded text-sm font-medium transition-colors inline-flex items-center shadow-sm">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                    Print Result
+                <button type="button" onclick="window.print()" class="bg-school-blue text-white hover:bg-school-navy px-4 sm:px-5 py-2 rounded-md text-xs sm:text-sm font-semibold transition-colors inline-flex items-center shadow-sm">
+                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                    <span>Print Result</span>
                 </button>
                 <?php endif; ?>
             </div>
             
-            <div class="flex flex-col md:flex-row gap-8 print-layout-row">
+            <div class="flex flex-col lg:flex-row gap-6 lg:gap-8 print-layout-row">
                 <!-- Sidebar selector -->
-                <div class="md:w-1/4 no-print">
+                <div class="lg:w-1/4 no-print">
                     <div class="bg-paper p-4 rounded-lg shadow-sm border border-gray-100 sticky top-6">
-                        <h3 class="text-sm font-bold text-school-navy uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Available Results</h3>
+                        <h3 class="text-xs font-bold text-school-navy uppercase tracking-wider mb-3 border-b border-gray-100 pb-2">Available Results</h3>
                         
                         <?php if (empty($availableTerms)): ?>
-                            <p class="text-sm text-slate-gray">No published results available yet.</p>
+                            <p class="text-xs sm:text-sm text-slate-gray">No published results available yet.</p>
                         <?php else: ?>
                             <ul class="space-y-2">
                                 <?php foreach ($availableTerms as $t): 
@@ -102,9 +102,9 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                                 ?>
                                     <li>
                                         <a href="<?= url("student/results.php?session={$t['academic_session_id']}&term={$t['term_id']}&class={$t['class_id']}") ?>" 
-                                           class="block p-3 rounded-md text-sm transition-colors <?= $isActive ? 'bg-school-blue text-white font-medium' : 'bg-gray-50 text-charcoal hover:bg-gray-100 border border-gray-200' ?>">
+                                           class="block p-2.5 sm:p-3 rounded-md text-xs sm:text-sm transition-colors <?= $isActive ? 'bg-school-blue text-white font-medium' : 'bg-gray-50 text-charcoal hover:bg-gray-100 border border-gray-200' ?>">
                                             <div class="font-bold"><?= e($t['term_name']) ?></div>
-                                            <div class="text-xs <?= $isActive ? 'text-blue-200' : 'text-slate-gray' ?>"><?= e($t['session_name']) ?> &bull; <?= e($t['class_name']) ?></div>
+                                            <div class="text-[11px] <?= $isActive ? 'text-blue-100' : 'text-slate-gray' ?> mt-0.5"><?= e($t['session_name']) ?> &bull; <?= e($t['class_name']) ?></div>
                                         </a>
                                     </li>
                                 <?php endforeach; ?>
@@ -114,7 +114,7 @@ require __DIR__ . '/../templates/layouts/app-header.php';
                 </div>
                 
                 <!-- Main result display -->
-                <div class="md:w-3/4 print-report-column">
+                <div class="lg:w-3/4 min-w-0 print-report-column">
                     <?php if ($report): ?>
                         <?php require __DIR__ . '/../templates/components/report_card.php'; ?>
 

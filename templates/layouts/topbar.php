@@ -43,7 +43,7 @@ $profileLinkUrl = ($topbarUserRole === ROLE_STUDENT) ? url('student/profile.php'
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
         </button>
-        <h2 class="text-lg sm:text-xl font-semibold text-school-navy truncate"><?= e($pageTitle ?? 'Dashboard') ?></h2>
+        <h2 class="text-sm sm:text-lg md:text-xl font-semibold text-school-navy truncate"><?= e($pageTitle ?? 'Dashboard') ?></h2>
         <?php if ($topbarActiveSession): ?>
         <div class="hidden md:flex items-center space-x-2 text-sm text-slate-gray bg-ivory px-3 py-1 rounded-full border border-gray-200 flex-shrink-0">
             <span class="font-bold">Session:</span> <span><?= e($topbarActiveSession['name']) ?></span>

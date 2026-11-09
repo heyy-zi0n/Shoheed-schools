@@ -58,18 +58,19 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
     <?php require __DIR__ . '/../../templates/layouts/sidebar.php'; ?>
     <div class="flex-1 flex flex-col overflow-hidden print-layout-content">
         <?php require __DIR__ . '/../../templates/layouts/topbar.php'; ?>
-        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-ivory p-6">
-            <div class="max-w-4xl mx-auto mb-6 flex flex-wrap justify-between items-center gap-4 no-print">
-                <a href="<?= e($backUrl) ?>" class="text-sm text-school-blue hover:underline font-medium">
-                    &larr; Back to Result Review
+        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-ivory p-3 sm:p-6 lg:p-8">
+            <div class="max-w-4xl mx-auto mb-4 sm:mb-6 flex flex-wrap justify-between items-center gap-3 no-print">
+                <a href="<?= e($backUrl) ?>" class="text-xs sm:text-sm text-school-blue hover:underline font-semibold inline-flex items-center gap-1.5">
+                    <span aria-hidden="true">&larr;</span>
+                    <span>Back to Result Review</span>
                 </a>
-                <div class="flex items-center gap-3">
-                    <span class="px-3 py-1 text-xs font-bold rounded-full bg-gray-200 text-charcoal">
-                        Batch Status: <?= e(str_replace('_', ' ', $batch['status'])) ?>
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <span class="px-2.5 py-1 text-[11px] sm:text-xs font-bold rounded-full bg-gray-200 text-charcoal">
+                        Batch: <?= e(str_replace('_', ' ', $batch['status'])) ?>
                     </span>
-                    <button type="button" onclick="window.print()" class="bg-school-blue text-white hover:bg-school-navy px-5 py-2 rounded text-sm font-medium transition-colors inline-flex items-center shadow-sm">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                        Print Report Card
+                    <button type="button" onclick="window.print()" class="bg-school-blue text-white hover:bg-school-navy px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-semibold transition-colors inline-flex items-center shadow-sm">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                        <span>Print Report Card</span>
                     </button>
                 </div>
             </div>

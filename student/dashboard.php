@@ -97,7 +97,7 @@ require __DIR__ . '/../templates/layouts/app-header.php';
     <div class="flex-1 flex flex-col overflow-hidden">
         <?php require __DIR__ . '/../templates/layouts/topbar.php'; ?>
         
-        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-ivory p-6">
+        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-ivory p-3 sm:p-6 lg:p-8">
             <?php require __DIR__ . '/../templates/components/alert.php'; ?>
             
             <?php if (!$student): ?>
