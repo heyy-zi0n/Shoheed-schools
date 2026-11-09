@@ -47,6 +47,13 @@ if (!$report) {
     redirect('');
 }
 
+$studentClearance = check_student_tuition_result_clearance(
+    $pdo,
+    $studentId,
+    (int)$batch['academic_session_id'],
+    (int)$batch['term_id']
+);
+
 $backUrl = ($role === ROLE_PRINCIPAL || $role === ROLE_ADMIN)
     ? url("principal/results/review.php?batch_id={$batchId}")
     : url("teacher/results/class_verification.php?class={$batch['class_id']}");
@@ -65,6 +72,19 @@ require __DIR__ . '/../../templates/layouts/app-header.php';
                     <span>Back to Result Review</span>
                 </a>
                 <div class="flex items-center gap-2 sm:gap-3">
+                    <?php if ($studentClearance['has_active_waiver']): ?>
+                        <span class="px-2.5 py-1 text-[11px] sm:text-xs font-bold rounded-full bg-amber-100 text-amber-900 border border-amber-300" title="Waiver by <?= e($studentClearance['waiver']['granted_by_role'] ? format_role_name($studentClearance['waiver']['granted_by_role']) : 'Admin') ?>: <?= e($studentClearance['waiver']['reason']) ?>">
+                            Student Portal: Waiver Active
+                        </span>
+                    <?php elseif ($studentClearance['is_cleared']): ?>
+                        <span class="px-2.5 py-1 text-[11px] sm:text-xs font-bold rounded-full bg-green-100 text-green-800 border border-green-200">
+                            Student Portal: Cleared (<?= (int)$studentClearance['current_percentage'] ?>%)
+                        </span>
+                    <?php else: ?>
+                        <span class="px-2.5 py-1 text-[11px] sm:text-xs font-bold rounded-full bg-red-100 text-school-red border border-red-200" title="Tuition: <?= number_format($studentClearance['current_percentage'], 1) ?>% (70% required)">
+                            Student Portal: Locked (<70%)
+                        </span>
+                    <?php endif; ?>
                     <span class="px-2.5 py-1 text-[11px] sm:text-xs font-bold rounded-full bg-gray-200 text-charcoal">
                         Batch: <?= e(str_replace('_', ' ', $batch['status'])) ?>
                     </span>
